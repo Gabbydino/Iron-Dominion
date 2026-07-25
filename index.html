@@ -79,7 +79,15 @@
   @keyframes pulseRed{0%,100%{filter:brightness(1);} 50%{filter:brightness(1.6);}}
   #healthText{position:absolute;right:6px;top:0;color:#f5ead0;font-size:11px;line-height:16px;text-shadow:0 1px 2px #000;}
 
-  #manaWrap{position:absolute;left:22px;bottom:94px;width:280px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.7));display:none;}
+  #staminaWrap{position:absolute;left:22px;bottom:94px;width:280px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.7));}
+  #staminaBanner{clip-path:polygon(0% 18%, 5% 0%, 95% 0%, 100% 18%, 100% 82%, 95% 100%, 5% 100%, 0% 82%);padding:7px 16px 6px 16px;}
+  #staminaLabel{display:flex;align-items:center;gap:6px;color:#d7ea8f;font-size:11px;letter-spacing:3px;text-transform:uppercase;opacity:.9;margin-bottom:4px;}
+  #staminaLabel svg{width:12px;height:12px;flex:none;}
+  #staminaBarOuter{width:100%;height:12px;background:#0e130a;position:relative;border:1px solid var(--iron);box-shadow:inset 0 0 6px rgba(0,0,0,.85);}
+  #staminaBarInner{height:100%;width:100%;background:linear-gradient(180deg,#d7ea8f,#7a9e2a);transition:width .15s ease-out;}
+  #staminaWrap.depleted #staminaBarInner{animation:pulseRed 0.6s infinite;}
+
+  #manaWrap{position:absolute;left:22px;bottom:154px;width:280px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.7));display:none;}
   #manaBanner{clip-path:polygon(0% 18%, 5% 0%, 95% 0%, 100% 18%, 100% 82%, 95% 100%, 5% 100%, 0% 82%);padding:7px 16px 6px 16px;}
   #manaLabel{display:flex;align-items:center;gap:6px;color:#bcdcff;font-size:11px;letter-spacing:3px;text-transform:uppercase;opacity:.9;margin-bottom:4px;}
   #manaLabel svg{width:12px;height:12px;flex:none;}
@@ -181,6 +189,8 @@
   .classCard h3{margin:4px 0;color:#e7c88a;letter-spacing:2px;text-transform:uppercase;font-size:17px;}
   .classCard p{font-size:12px;line-height:1.7;color:#c9b98f;font-family:Georgia,serif;min-height:64px;margin:6px 0;}
   .classCard .statline{font-size:10.5px;color:var(--gold);letter-spacing:1px;margin-top:6px;font-family:Georgia,serif;}
+  .abilityCard:hover{box-shadow:0 0 26px rgba(125,196,255,.5), 0 12px 26px rgba(0,0,0,.6);}
+  .abilityCard p{min-height:52px;}
 
   /* upgrade menu */
   #upgradeScreen .panel{max-width:460px;}
@@ -265,6 +275,9 @@
       <circle cx="7" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.5"/>
       <path d="M10 11 L20 21 M15.5 16.5 L18.3 19.3 M13 14 L15.5 16.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     </g>
+    <g id="icon-bolt">
+      <path d="M13 2 L4 14 H10.5 L9 22 L20 9 H13.5 Z" fill="currentColor"/>
+    </g>
   </defs>
 </svg>
 
@@ -298,6 +311,12 @@
       <div id="healthBarOuter"><div id="healthBarInner"></div><div id="healthText">100</div></div>
     </div>
   </div>
+  <div id="staminaWrap">
+    <div id="staminaBanner" class="ornate">
+      <div id="staminaLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-bolt"/></svg>Estamina</div>
+      <div id="staminaBarOuter"><div id="staminaBarInner"></div></div>
+    </div>
+  </div>
   <div id="manaWrap">
     <div id="manaBanner" class="ornate">
       <div id="manaLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-mana"/></svg>Mana</div>
@@ -308,6 +327,7 @@
   <div id="statsPlaque" class="ornate">
     <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-coin"/></svg>Pontos: <span id="scoreVal">0</span></div>
     <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-key"/></svg>Chave: <span id="keyStatusVal">Não</span></div>
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-bolt"/></svg>Habilidades: <span id="abilityCountVal">0</span></div>
     <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-scroll"/></svg>Aprimoramentos: <span id="upgradeCountVal">0</span></div>
   </div>
 
@@ -384,11 +404,12 @@
   <div class="title">Dungeon Shooter</div>
   <div class="subtitle" id="chosenClassLabel">uma masmorra medieval te espera</div>
   <div class="panel ornate">
-    <p><span class="key">W A S D</span> mover</p>
+    <p><span class="key">W A S D</span> mover &nbsp; <span class="key">Shift</span> correr</p>
     <p><span class="key">Mouse</span> olhar &nbsp; <span class="key">Clique</span> atacar</p>
-    <p><span class="key">E</span> abrir baú &nbsp; <span class="key">U</span> aprimorar &nbsp; <span class="key">ESC</span> pausar</p>
+    <p><span class="key">E</span> interagir &nbsp; <span class="key">U</span> aprimorar &nbsp; <span class="key">I</span> inventário &nbsp; <span class="key">M</span> mapa</p>
     <div class="divider">❖</div>
     <p>Desça 30 andares cada vez mais perigosos e saqueie baús para aprimorar seus atributos. A escadaria de cada andar fica trancada — encontre a chave escondida em um dos baús para destrancá-la.</p>
+    <p>Ataques e corridas consomem estamina, então escolha bem seus golpes. Alguns baús guardam relíquias mágicas que concedem habilidades permanentes. Um mercador errante aparece em 3 andares da masmorra — negocie por armas melhores.</p>
     <p class="keyHint">Você não sabe quantos inimigos espreitam em cada andar. Fique atento.</p>
   </div>
   <button class="btn" id="startBtn">Entrar na Masmorra</button>
@@ -416,6 +437,40 @@
     </div>
   </div>
   <button class="btn" id="backOptionsBtn">Voltar</button>
+</div>
+
+<!-- Ability card draw -->
+<div class="overlay hidden" id="abilityScreen">
+  <div class="flourish">❖ ❖ ❖</div>
+  <div class="title" style="font-size:32px;">Relíquia Mágica</div>
+  <div class="subtitle">escolha uma habilidade</div>
+  <div class="classRow" id="abilityCards"></div>
+</div>
+
+<!-- Merchant shop -->
+<div class="overlay hidden" id="shopScreen">
+  <div class="flourish">❖</div>
+  <div class="title" style="font-size:32px;">Mercador Errante</div>
+  <div class="subtitle">pontos disponíveis: <span id="shopPointsVal">0</span></div>
+  <div class="panel ornate" id="shopList"></div>
+  <button class="btn" id="closeShopBtn">Fechar</button>
+</div>
+
+<!-- Inventory -->
+<div class="overlay hidden" id="inventoryScreen">
+  <div class="flourish">❖</div>
+  <div class="title" style="font-size:32px;">Inventário</div>
+  <div class="subtitle">arsenal do herói</div>
+  <div class="panel ornate" id="inventoryList"></div>
+  <button class="btn" id="closeInventoryBtn">Fechar</button>
+</div>
+
+<!-- Full dungeon map -->
+<div class="overlay hidden" id="fullMapScreen">
+  <div class="flourish">❖</div>
+  <div class="title" style="font-size:28px;">Mapa · Andar <span id="fullMapFloorNum">1</span></div>
+  <canvas id="fullMapCanvas" width="560" height="560" style="border:3px solid var(--gold);border-radius:6px;background:#0a0704;box-shadow:0 10px 30px rgba(0,0,0,.6);"></canvas>
+  <button class="btn" id="closeFullMapBtn">Fechar</button>
 </div>
 
 <!-- Upgrade menu -->
@@ -606,12 +661,14 @@ document.getElementById('sfxVolumeSlider').addEventListener('input', (e)=>{
 
 /* ================= CLASS CONFIG ================= */
 const CLASS_CONFIG = {
-  warrior:{ name:'Guerreiro', maxHp:130, damage:26, moveSpeed:4.4, attackCooldown:0.5, maxMana:0, manaRegen:0, manaCost:0, ranged:false },
-  mage:{ name:'Mago', maxHp:85, damage:32, moveSpeed:4.0, attackCooldown:0.38, maxMana:100, manaRegen:16, manaCost:16, ranged:true }
+  warrior:{ name:'Guerreiro', maxHp:130, damage:26, moveSpeed:4.4, attackCooldown:0.5, maxMana:0, manaRegen:0, manaCost:0, ranged:false, maxStamina:100, attackStaminaCost:24 },
+  mage:{ name:'Mago', maxHp:85, damage:32, moveSpeed:4.0, attackCooldown:0.38, maxMana:100, manaRegen:16, manaCost:16, ranged:true, maxStamina:100, attackStaminaCost:16 }
 };
 let playerClass = 'warrior';
 let stats = null;
-let health=100, mana=0;
+let health=100, mana=0, stamina=100;
+let isSprinting=false;
+const SPRINT_DRAIN=26, STAMINA_REGEN=20, SPRINT_SPEED_MUL=1.55;
 
 const DIFFICULTY_CONFIG = {
   easy:{ name:'Fácil', minEnemies:10, statMul:0.8, speedMul:0.9 },
@@ -619,6 +676,64 @@ const DIFFICULTY_CONFIG = {
   hard:{ name:'Difícil', minEnemies:20, statMul:1.25, speedMul:1.15 }
 };
 let difficulty='normal';
+
+/* ================= ABILITY POOL (relic cards from chests) ================= */
+const ABILITY_POOL = [
+  { id:'lifesteal', name:'Fúria Sanguinária', desc:'Cure 15% do dano causado em vida.', icon:'icon-skull',
+    apply:()=>{ stats.lifesteal=(stats.lifesteal||0)+0.15; } },
+  { id:'staminaregen', name:'Pés Ligeiros', desc:'Regeneração de estamina 40% mais rápida e corridas mais baratas.', icon:'icon-bolt',
+    apply:()=>{ stats.staminaRegenMul=(stats.staminaRegenMul||1)*1.4; stats.sprintCostMul=(stats.sprintCostMul||1)*0.75; } },
+  { id:'staminamax', name:'Fôlego Eterno', desc:'+30 de estamina máxima.', icon:'icon-bolt',
+    apply:()=>{ stats.maxStamina+=30; stamina=Math.min(stats.maxStamina, stamina+30); } },
+  { id:'armor', name:'Couraça Antiga', desc:'Reduz o dano recebido de inimigos em 15%.', icon:'icon-shield',
+    apply:()=>{ stats.damageReduction=Math.min(0.6,(stats.damageReduction||0)+0.15); } },
+  { id:'dmg', name:'Fúria de Batalha', desc:'+6 de dano em todos os ataques.', icon:'icon-swords',
+    apply:()=>{ stats.damage+=6; } },
+  { id:'cooldown', name:'Reflexos Élficos', desc:'Reduz o tempo de recarga do ataque em 12%.', icon:'icon-bolt',
+    apply:()=>{ stats.attackCooldown=Math.max(0.15, stats.attackCooldown*0.88); } },
+  { id:'gold', name:'Sorte do Ladrão', desc:'+50% de ouro encontrado em baús.', icon:'icon-coin',
+    apply:()=>{ stats.goldMul=(stats.goldMul||1)+0.5; } },
+  { id:'score', name:'Toque de Midas', desc:'+50% de pontos ao derrotar inimigos.', icon:'icon-coin',
+    apply:()=>{ stats.scoreMul=(stats.scoreMul||1)+0.5; } },
+  { id:'map', name:'Olhos da Coruja', desc:'Amplia o alcance de visão do minimapa.', icon:'icon-scroll',
+    apply:()=>{ stats.mapRadiusBonus=(stats.mapRadiusBonus||0)+2; } },
+  { id:'mana', name:'Fluxo Arcano', desc:'Reduz o custo de mana dos ataques em 25%.', icon:'icon-mana', classFilter:'mage',
+    apply:()=>{ stats.manaCost=Math.max(4, Math.round(stats.manaCost*0.75)); } }
+];
+let ownedAbilities=[];
+let pendingAbilityCards=[];
+
+/* ================= WEAPONS / SHOP / INVENTORY ================= */
+const WEAPON_CATALOG = {
+  warrior:[
+    { id:'sword_short', name:'Espada Curta', price:0, dmgMod:0, cooldownMod:1, desc:'Sua espada inicial, equilibrada e confiável.' },
+    { id:'sword_long', name:'Espada Longa', price:300, dmgMod:12, cooldownMod:1.15, desc:'Mais alcance e dano, porém golpes mais lentos.' },
+    { id:'blade_elven', name:'Lâmina Élfica', price:350, dmgMod:-4, cooldownMod:0.75, desc:'Leve e rápida, golpeia com grande frequência.' },
+    { id:'axe_war', name:'Machado de Guerra', price:520, dmgMod:24, cooldownMod:1.4, desc:'Dano devastador, mas exige tempo de recarga.' }
+  ],
+  mage:[
+    { id:'staff_apprentice', name:'Cajado Aprendiz', price:0, dmgMod:0, cooldownMod:1, manaCostMod:0, desc:'Seu cajado inicial, simples e estável.' },
+    { id:'staff_fire', name:'Cajado de Fogo', price:320, dmgMod:14, cooldownMod:1.1, manaCostMod:4, desc:'Rajadas ardentes, custam mais mana.' },
+    { id:'staff_arcane', name:'Cajado Arcano', price:360, dmgMod:-2, cooldownMod:1, manaCostMod:-6, desc:'Feitiços eficientes, custam bem menos mana.' },
+    { id:'staff_storm', name:'Cajado das Tempestades', price:540, dmgMod:8, cooldownMod:0.7, manaCostMod:3, desc:'Conjura em rajadas muito rápidas.' }
+  ]
+};
+const MERCHANT_FLOORS = [5, 15, 25];
+
+const WEAPON_VISUALS = {
+  sword_short:{ bladeLen:0.75, bladeColor:0xcfd6dd, hiltColor:0x3a2a18, axe:false },
+  sword_long:{ bladeLen:1.02, bladeColor:0xd8dde6, hiltColor:0x2a1c10, axe:false },
+  blade_elven:{ bladeLen:0.66, bladeColor:0xb8f0d0, hiltColor:0x1c3a2a, axe:false },
+  axe_war:{ bladeLen:0.5, bladeColor:0xaeb4bb, hiltColor:0x241a10, axe:true },
+  staff_apprentice:{ orbColor:0x7dc4ff, emissive:0x2a6cff },
+  staff_fire:{ orbColor:0xff8a3c, emissive:0xff3c0a },
+  staff_arcane:{ orbColor:0xb180ff, emissive:0x6a1ecf },
+  staff_storm:{ orbColor:0xbdf0ff, emissive:0x1ecfe0 }
+};
+let ownedWeapons=[];
+let equippedWeaponId=null;
+let merchant=null;
+let currentNearMerchant=false;
 
 /* ================= THEMES ================= */
 const THEMES = [
@@ -780,12 +895,16 @@ function clearFloor(){
   torches.forEach(t=>scene.remove(t.group)); torches=[];
   enemies.forEach(e=>scene.remove(e.group)); enemies=[];
   chests.forEach(c=>scene.remove(c.group)); chests=[];
+  if(merchant){ scene.remove(merchant.group); merchant=null; }
+  currentNearMerchant=false;
   if(stairsMesh){ scene.remove(stairsMesh); stairsMesh=null; }
   stairsPos=null;
   if(floorMesh){ scene.remove(floorMesh); floorMesh.geometry.dispose(); if(floorMat){ if(floorMat.map) floorMat.map.dispose(); floorMat.dispose(); floorMat=null; } floorMesh=null; }
   if(ceilingMesh){ scene.remove(ceilingMesh); ceilingMesh.geometry.dispose(); if(ceilMat){ if(ceilMat.map) ceilMat.map.dispose(); ceilMat.dispose(); ceilMat=null; } ceilingMesh=null; }
   ceilingBeams.forEach(b=>scene.remove(b)); ceilingBeams=[];
   activeTracers.forEach(tr=>scene.remove(tr.line)); activeTracers=[];
+  dyingEnemies.forEach(d=>scene.remove(d.group)); dyingEnemies=[];
+  damageNumbers.forEach(d=>{ scene.remove(d.sprite); d.tex.dispose(); d.sprite.material.dispose(); }); damageNumbers=[];
 }
 
 function makeTorch(x,z,color,angle){
@@ -846,6 +965,25 @@ function unlockStairs(){
   if(stairsLight){ stairsLight.color.setHex(stairsTheme.torch); stairsLight.intensity=1.4; }
 }
 
+function makeMerchant(x,z){
+  const grp=new THREE.Group();
+  const robeMat=new THREE.MeshStandardMaterial({color:0x2a2050, roughness:0.9});
+  const trimMat=new THREE.MeshStandardMaterial({color:0xc79a4b, roughness:0.5, metalness:0.6});
+  const skinMat=new THREE.MeshStandardMaterial({color:0xd8b48a, roughness:0.8});
+  const robe=new THREE.Mesh(new THREE.ConeGeometry(0.42,1.3,10), robeMat); robe.position.y=0.75; grp.add(robe);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.24,10,10), skinMat); head.position.y=1.55; grp.add(head);
+  const hood=new THREE.Mesh(new THREE.ConeGeometry(0.28,0.4,10), robeMat); hood.position.y=1.72; grp.add(hood);
+  const belt=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.03,6,16), trimMat); belt.rotation.x=Math.PI/2; belt.position.y=1.0; grp.add(belt);
+  const lanternPole=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.5,6), new THREE.MeshStandardMaterial({color:0x3a2a18}));
+  lanternPole.position.set(0.42,1.1,0); lanternPole.rotation.z=0.3; grp.add(lanternPole);
+  const lanternGlow=new THREE.Mesh(new THREE.SphereGeometry(0.08,8,8), new THREE.MeshBasicMaterial({color:0xffd27a}));
+  lanternGlow.position.set(0.6,0.86,0); grp.add(lanternGlow);
+  const lanternLight=new THREE.PointLight(0xffd27a,1.1,5,2); lanternLight.position.copy(lanternGlow.position); grp.add(lanternLight);
+  grp.position.set(x,0,z);
+  scene.add(grp);
+  merchant={group:grp, x:x, z:z, bobPhase:Math.random()*10};
+}
+
 const boneMat = new THREE.MeshStandardMaterial({color:0xcfc7a8, roughness:0.8});
 const eyeMat = new THREE.MeshBasicMaterial({color:0xff2020});
 function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss){
@@ -862,10 +1000,19 @@ function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss){
   const legGeo=new THREE.BoxGeometry(0.17,0.75,0.17);
   const legL=new THREE.Mesh(legGeo, boneMat); legL.position.set(-0.15,0.4,0); grp.add(legL);
   const legR=new THREE.Mesh(legGeo, boneMat); legR.position.set(0.15,0.4,0); grp.add(legR);
+  const barY=2.02;
+  const barW=0.7;
+  const healthBarBg=new THREE.Mesh(new THREE.PlaneGeometry(barW,0.09), new THREE.MeshBasicMaterial({color:0x1a0808}));
+  healthBarBg.position.set(0,barY,0);
+  const healthBarFg=new THREE.Mesh(new THREE.PlaneGeometry(barW,0.09), new THREE.MeshBasicMaterial({color:0x3ad13a}));
+  healthBarFg.position.set(0,barY,0.001);
+  healthBarBg.renderOrder=998; healthBarFg.renderOrder=999;
+  grp.add(healthBarBg); grp.add(healthBarFg);
   if(isBoss) grp.scale.set(1.9,1.9,1.9);
   grp.position.set(x,0,z);
   scene.add(grp);
-  const enemy={group:grp, hp:hp, maxHp:hp, speed:speed, dmg:dmg, alive:true, attackCd:0, hitFlash:0, baseColor:baseColor, bobPhase:Math.random()*10, isBoss:!!isBoss, parts:{torso:torso,head:head}};
+  const enemy={group:grp, hp:hp, maxHp:hp, speed:speed, dmg:dmg, alive:true, attackCd:0, hitFlash:0, baseColor:baseColor, bobPhase:Math.random()*10, isBoss:!!isBoss,
+    parts:{torso:torso,head:head}, healthBarFg:healthBarFg, healthBarBg:healthBarBg, barW:barW};
   enemies.push(enemy);
 }
 
@@ -878,9 +1025,9 @@ function enemyCountForFloor(f){
 function enemyStatsForFloor(f){
   const cfg=DIFFICULTY_CONFIG[difficulty];
   return {
-    hp: Math.max(1, Math.round((2+Math.floor(f*0.6))*cfg.statMul)),
+    hp: Math.max(10, Math.round((42+f*7.5)*cfg.statMul)),
     speed: Math.min((1.5+f*0.05)*cfg.speedMul, 3.4),
-    dmg: Math.max(1, Math.round((7+Math.floor(f*0.6))*cfg.statMul))
+    dmg: Math.max(1, Math.round((8+f*1.1)*cfg.statMul))
   };
 }
 
@@ -906,7 +1053,7 @@ function buildFloor(f){
   floorMat=new THREE.MeshStandardMaterial({map:floorTex, roughness:1, metalness:0});
   const ceilTex=makeStoneTexture(theme.ceilBase, theme.ceilMortar, 256, 50);
   ceilTex.repeat.set(size*CELL/8, size*CELL/8);
-  ceilMat=new THREE.MeshStandardMaterial({map:ceilTex, roughness:1, side:THREE.BackSide});
+  ceilMat=new THREE.MeshStandardMaterial({map:ceilTex, roughness:1, side:THREE.DoubleSide});
 
   for(let r=0;r<size;r++){
     for(let c=0;c<size;c++){
@@ -975,10 +1122,21 @@ function buildFloor(f){
   }
   if(f===30){
     const bossCell=stairsCell;
-    makeEnemy(bossCell.c*CELL+CELL/2, bossCell.r*CELL+CELL/2, 140, 2.1, 24, 0x1a0a24, true);
+    makeEnemy(bossCell.c*CELL+CELL/2, bossCell.r*CELL+CELL/2, 650, 2.1, 34, 0x1a0a24, true);
   }
 
   const usedCells=[{r:1,c:1},stairsCell];
+  if(MERCHANT_FLOORS.includes(f)){
+    const merchantCandidates=shuffleArr(floorCells.filter(c=>{
+      const d=dist[c.r][c.c];
+      return d>=3 && !(c.r===stairsCell.r&&c.c===stairsCell.c);
+    }));
+    if(merchantCandidates.length>0){
+      const mc=merchantCandidates[0];
+      makeMerchant(mc.c*CELL+CELL/2, mc.r*CELL+CELL/2);
+      usedCells.push(mc);
+    }
+  }
   const chestCandidates=shuffleArr(floorCells.filter(c=>!usedCells.some(u=>u.r===c.r&&u.c===c.c)));
   const chestCount=3+(f%3);
   const keyChestIndex=Math.floor(Math.random()*Math.min(chestCount, chestCandidates.length));
@@ -1008,20 +1166,28 @@ let weaponGroup=null, attackAnimT=0;
 function buildWeaponViewmodel(){
   if(weaponGroup){ camera.remove(weaponGroup); }
   weaponGroup=new THREE.Group();
+  const defaultId = playerClass==='warrior' ? 'sword_short' : 'staff_apprentice';
+  const vis = WEAPON_VISUALS[equippedWeaponId] || WEAPON_VISUALS[defaultId];
   if(playerClass==='warrior'){
-    const bladeMat=new THREE.MeshStandardMaterial({color:0xcfd6dd, metalness:0.7, roughness:0.3});
-    const hiltMat=new THREE.MeshStandardMaterial({color:0x3a2a18, roughness:0.8});
+    const bladeMat=new THREE.MeshStandardMaterial({color:vis.bladeColor, metalness:0.7, roughness:0.3});
+    const hiltMat=new THREE.MeshStandardMaterial({color:vis.hiltColor, roughness:0.8});
     const goldMat=new THREE.MeshStandardMaterial({color:0xc79a4b, metalness:0.6, roughness:0.4});
-    const blade=new THREE.Mesh(new THREE.BoxGeometry(0.07,0.75,0.02), bladeMat); blade.position.y=0.5; weaponGroup.add(blade);
-    const guard=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.05,0.05), goldMat); guard.position.y=0.12; weaponGroup.add(guard);
-    const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.22,8), hiltMat); handle.position.y=0.0; weaponGroup.add(handle);
+    if(vis.axe){
+      const axeHead=new THREE.Mesh(new THREE.ConeGeometry(0.24,0.34,4), bladeMat);
+      axeHead.rotation.z=Math.PI/2; axeHead.position.set(0.03,0.6,0); weaponGroup.add(axeHead);
+      const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.68,8), hiltMat); handle.position.y=0.26; weaponGroup.add(handle);
+    } else {
+      const blade=new THREE.Mesh(new THREE.BoxGeometry(0.07,vis.bladeLen,0.02), bladeMat); blade.position.y=vis.bladeLen/2+0.12; weaponGroup.add(blade);
+      const guard=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.05,0.05), goldMat); guard.position.y=0.12; weaponGroup.add(guard);
+      const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.22,8), hiltMat); handle.position.y=0.0; weaponGroup.add(handle);
+    }
   } else {
     const rodMat=new THREE.MeshStandardMaterial({color:0x3a2a18, roughness:0.8});
-    const orbMat=new THREE.MeshStandardMaterial({color:0x7dc4ff, emissive:0x2a6cff, emissiveIntensity:0.8, roughness:0.3});
+    const orbMat=new THREE.MeshStandardMaterial({color:vis.orbColor, emissive:vis.emissive, emissiveIntensity:0.8, roughness:0.3});
     const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.03,0.85,8), rodMat); rod.position.y=0.35; weaponGroup.add(rod);
     const orb=new THREE.Mesh(new THREE.SphereGeometry(0.09,12,12), orbMat); orb.position.y=0.78; weaponGroup.add(orb);
     weaponGroup.userData.orb=orb;
-    const light=new THREE.PointLight(0x4a9dff, 0.6, 3, 2); light.position.y=0.78; weaponGroup.add(light);
+    const light=new THREE.PointLight(vis.orbColor, 0.6, 3, 2); light.position.y=0.78; weaponGroup.add(light);
   }
   weaponGroup.position.set(0.32,-0.32,-0.55);
   weaponGroup.rotation.set(0.15,0.35,0.1);
@@ -1032,6 +1198,8 @@ function buildWeaponViewmodel(){
 const raycaster=new THREE.Raycaster();
 let attackCooldownTimer=0;
 let activeTracers=[];
+let damageNumbers=[];
+let dyingEnemies=[];
 const tracerMatWarrior=new THREE.LineBasicMaterial({color:0xffe0a0, transparent:true});
 const tracerMatMage=new THREE.LineBasicMaterial({color:0x7dc4ff, transparent:true});
 
@@ -1045,16 +1213,58 @@ function spawnTracer(endPoint, isMagic){
 
 function damageEnemy(en,dmg){
   en.hp-=dmg; en.hitFlash=0.15;
+  spawnDamageNumber(en.group.position, dmg, en.isBoss);
+  if(stats.lifesteal){ health=Math.min(stats.maxHp, health+dmg*stats.lifesteal); }
   if(en.hp<=0 && en.alive){
     en.alive=false;
     killCount++;
     if(killCount%4===0){ upgradePoints++; showToast('+1 Ponto de Aprimoramento'); }
-    score += en.isBoss?1000:100;
-    scene.remove(en.group);
+    score += Math.round((en.isBoss?1000:100)*(stats.scoreMul||1));
+    if(en.healthBarBg){ en.healthBarBg.visible=false; en.healthBarFg.visible=false; }
+    dyingEnemies.push({group:en.group, t:0, baseScale:en.group.scale.x||1});
     playSound('enemyDeath');
     updateHUD();
     if(en.isBoss){ setTimeout(triggerVictory, 1400); }
   }
+}
+
+function spawnDamageNumber(worldPos, amount, isCrit){
+  const cnv=document.createElement('canvas'); cnv.width=64; cnv.height=32;
+  const ctx=cnv.getContext('2d');
+  ctx.font='bold 24px Georgia, serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.lineWidth=4; ctx.strokeStyle='rgba(0,0,0,0.85)';
+  ctx.strokeText(String(Math.round(amount)), 32, 16);
+  ctx.fillStyle = isCrit ? '#ffdca8' : '#ff6a4a';
+  ctx.fillText(String(Math.round(amount)), 32, 16);
+  const tex=new THREE.CanvasTexture(cnv);
+  const mat=new THREE.SpriteMaterial({map:tex, depthTest:false, transparent:true});
+  const sprite=new THREE.Sprite(mat);
+  sprite.scale.set(0.55, 0.28, 1);
+  sprite.position.set(worldPos.x + (Math.random()-0.5)*0.3, worldPos.y+1.7, worldPos.z + (Math.random()-0.5)*0.3);
+  sprite.renderOrder=1000;
+  scene.add(sprite);
+  damageNumbers.push({sprite:sprite, tex:tex, life:0.7, maxLife:0.7});
+}
+function updateDamageNumbers(dt){
+  damageNumbers=damageNumbers.filter(d=>{
+    d.life-=dt;
+    d.sprite.position.y += dt*1.1;
+    d.sprite.material.opacity = Math.max(0, d.life/d.maxLife);
+    if(d.life<=0){ scene.remove(d.sprite); d.tex.dispose(); d.sprite.material.dispose(); return false; }
+    return true;
+  });
+}
+function updateDyingEnemies(dt){
+  dyingEnemies=dyingEnemies.filter(d=>{
+    d.t+=dt;
+    const p=Math.min(1, d.t/0.5);
+    const s=Math.max(0.001, d.baseScale*(1-p));
+    d.group.scale.set(s,s,s);
+    d.group.position.y -= dt*1.3;
+    d.group.rotation.z += dt*2.4;
+    if(p>=1){ scene.remove(d.group); return false; }
+    return true;
+  });
 }
 
 function meleeAttack(){
@@ -1068,7 +1278,7 @@ function meleeAttack(){
     const toE=new THREE.Vector3(dx,0,dz).normalize();
     if(forward.dot(toE)>0.5){ damageEnemy(en, stats.damage); hitAny=true; }
   }
-  if(hitAny) playSound('hit');
+  if(hitAny){ playSound('hit'); shakeIntensity=Math.max(shakeIntensity, 0.35); }
 }
 function magicAttack(){
   raycaster.setFromCamera({x:0,y:0}, camera);
@@ -1088,18 +1298,22 @@ function magicAttack(){
 }
 function attack(){
   if(attackCooldownTimer>0) return;
+  if(stamina<stats.attackStaminaCost){ showToast('Sem estamina!'); return; }
   if(playerClass==='warrior'){
+    stamina-=stats.attackStaminaCost;
     attackCooldownTimer=stats.attackCooldown;
     playSound('swing');
     meleeAttack();
   } else {
     if(mana<stats.manaCost){ showToast('Mana insuficiente!'); return; }
+    stamina-=stats.attackStaminaCost;
     mana-=stats.manaCost;
     attackCooldownTimer=stats.attackCooldown;
     playSound('magic');
     magicAttack();
   }
   attackAnimT=1;
+  updateHUD();
 }
 
 /* ================= INTERACTIONS ================= */
@@ -1115,18 +1329,154 @@ function openChest(ch){
     return;
   }
   const roll=Math.random();
-  if(roll<0.4){
-    const g=150+floor*10; score+=g; showToast('Ouro encontrado! +'+g+' pontos');
-  } else if(roll<0.7){
+  if(roll<0.30){
+    const g=Math.round((150+floor*10)*(stats.goldMul||1)); score+=g; showToast('Ouro encontrado! +'+g+' pontos');
+  } else if(roll<0.56){
     const heal=35; health=Math.min(stats.maxHp, health+heal); showToast('Poção de vida! +'+heal+' HP');
-  } else if(roll<0.88){
+  } else if(roll<0.70){
     upgradePoints+=1; showToast('Runa de Poder! +1 Ponto de Aprimoramento');
-  } else {
+  } else if(roll<0.83){
     if(playerClass==='mage'){ mana=stats.maxMana; showToast('Cristal de mana restaurado!'); }
-    else { score+=200; showToast('Baú do tesouro! +200 pontos'); }
+    else { const g=Math.round(200*(stats.goldMul||1)); score+=g; showToast('Baú do tesouro! +'+g+' pontos'); }
+  } else {
+    openAbilityScreen();
+    return;
   }
   updateHUD();
 }
+
+function drawAbilityCards(){
+  const pool = ABILITY_POOL.filter(a=> !a.classFilter || a.classFilter===playerClass);
+  return shuffleArr(pool.slice()).slice(0,3);
+}
+function openAbilityScreen(){
+  gameActive=false;
+  document.exitPointerLock();
+  pendingAbilityCards=drawAbilityCards();
+  const container=document.getElementById('abilityCards');
+  container.innerHTML='';
+  pendingAbilityCards.forEach((ab,idx)=>{
+    const div=document.createElement('div');
+    div.className='classCard ornate abilityCard';
+    div.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#'+ab.icon+'"/></svg><h3>'+ab.name+'</h3><p>'+ab.desc+'</p>';
+    div.addEventListener('click', ()=>{ chooseAbility(idx); });
+    container.appendChild(div);
+  });
+  document.getElementById('abilityScreen').classList.remove('hidden');
+}
+function chooseAbility(idx){
+  const ab=pendingAbilityCards[idx];
+  if(!ab) return;
+  ab.apply();
+  ownedAbilities.push(ab.id);
+  playSound('upgrade');
+  showToast('Habilidade adquirida: '+ab.name);
+  document.getElementById('abilityScreen').classList.add('hidden');
+  updateHUD();
+  lockPointer();
+}
+
+/* ================= WEAPONS / SHOP / INVENTORY LOGIC ================= */
+function equipWeapon(weaponId){
+  const cat=WEAPON_CATALOG[playerClass];
+  const oldW=cat.find(w=>w.id===equippedWeaponId) || cat[0];
+  const newW=cat.find(w=>w.id===weaponId);
+  if(!newW) return;
+  stats.damage -= oldW.dmgMod;
+  stats.attackCooldown = stats.attackCooldown/(oldW.cooldownMod||1);
+  if(playerClass==='mage'){ stats.manaCost -= (oldW.manaCostMod||0); }
+  stats.damage += newW.dmgMod;
+  stats.attackCooldown = Math.max(0.12, stats.attackCooldown*(newW.cooldownMod||1));
+  if(playerClass==='mage'){ stats.manaCost = Math.max(4, stats.manaCost+(newW.manaCostMod||0)); }
+  equippedWeaponId=weaponId;
+  buildWeaponViewmodel();
+  updateHUD();
+}
+function buyWeapon(weaponId){
+  const cat=WEAPON_CATALOG[playerClass];
+  const w=cat.find(x=>x.id===weaponId);
+  if(!w) return;
+  if(ownedWeapons.includes(weaponId)){
+    if(equippedWeaponId===weaponId) return;
+    equipWeapon(weaponId);
+    playSound('upgrade');
+    showToast('Equipado: '+w.name);
+    refreshShopUI();
+    return;
+  }
+  if(score<w.price){ showToast('Pontos insuficientes!'); return; }
+  score-=w.price;
+  ownedWeapons.push(weaponId);
+  equipWeapon(weaponId);
+  playSound('chest');
+  showToast('Comprado e equipado: '+w.name);
+  updateHUD();
+  refreshShopUI();
+}
+function openShopScreen(){
+  gameActive=false;
+  document.exitPointerLock();
+  refreshShopUI();
+  document.getElementById('shopScreen').classList.remove('hidden');
+}
+function closeShopScreen(){
+  document.getElementById('shopScreen').classList.add('hidden');
+  lockPointer();
+}
+function refreshShopUI(){
+  document.getElementById('shopPointsVal').textContent=score;
+  const list=document.getElementById('shopList');
+  list.innerHTML='';
+  const cat=WEAPON_CATALOG[playerClass];
+  cat.forEach(w=>{
+    const owned=ownedWeapons.includes(w.id);
+    const equipped=equippedWeaponId===w.id;
+    const row=document.createElement('div');
+    row.className='upgradeRow';
+    const label = equipped ? 'Equipado' : (owned ? 'Equipar' : ('Comprar ('+w.price+')'));
+    row.innerHTML = '<div class="upgradeInfo"><strong>'+w.name+'</strong><span>'+w.desc+'</span></div>'+
+      '<button class="btn small'+(equipped?' disabled':'')+'" data-weapon="'+w.id+'">'+label+'</button>';
+    list.appendChild(row);
+  });
+  list.querySelectorAll('[data-weapon]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ buyWeapon(btn.dataset.weapon); });
+  });
+}
+function openInventoryScreen(){
+  gameActive=false;
+  document.exitPointerLock();
+  refreshInventoryUI();
+  document.getElementById('inventoryScreen').classList.remove('hidden');
+}
+function closeInventoryScreen(){
+  document.getElementById('inventoryScreen').classList.add('hidden');
+  lockPointer();
+}
+function refreshInventoryUI(){
+  const list=document.getElementById('inventoryList');
+  list.innerHTML='';
+  const cat=WEAPON_CATALOG[playerClass];
+  ownedWeapons.forEach(id=>{
+    const w=cat.find(x=>x.id===id);
+    if(!w) return;
+    const equipped=equippedWeaponId===id;
+    const row=document.createElement('div');
+    row.className='upgradeRow';
+    row.innerHTML = '<div class="upgradeInfo"><strong>'+w.name+'</strong><span>'+w.desc+'</span></div>'+
+      '<button class="btn small'+(equipped?' disabled':'')+'" data-weapon="'+w.id+'">'+(equipped?'Equipado':'Equipar')+'</button>';
+    list.appendChild(row);
+  });
+  if(ownedAbilities.length>0){
+    const heading=document.createElement('p');
+    heading.className='keyHint';
+    heading.textContent='Habilidades adquiridas: '+ownedAbilities.length;
+    list.appendChild(heading);
+  }
+  list.querySelectorAll('[data-weapon]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ equipWeapon(btn.dataset.weapon); refreshInventoryUI(); });
+  });
+}
+
 function updateInteractables(dt){
   let nearChest=null;
   for(const ch of chests){
@@ -1135,7 +1485,23 @@ function updateInteractables(dt){
     if(dx*dx+dz*dz<1.7*1.7){ nearChest=ch; break; }
   }
   currentNearChest=nearChest;
-  document.getElementById('chestPrompt').classList.toggle('show', !!nearChest);
+
+  currentNearMerchant=false;
+  if(merchant){
+    const dx=camera.position.x-merchant.x, dz=camera.position.z-merchant.z;
+    if(dx*dx+dz*dz<2.2*2.2){ currentNearMerchant=true; }
+  }
+
+  const promptEl=document.getElementById('chestPrompt');
+  if(nearChest){
+    promptEl.innerHTML='Pressione <span class="key">E</span> para abrir o baú';
+    promptEl.classList.add('show');
+  } else if(currentNearMerchant){
+    promptEl.innerHTML='Pressione <span class="key">E</span> para negociar com o mercador';
+    promptEl.classList.add('show');
+  } else {
+    promptEl.classList.remove('show');
+  }
 
   if(lockedStairsMsgCd>0) lockedStairsMsgCd-=dt;
 
@@ -1181,6 +1547,9 @@ function updateHUD(){
   document.getElementById('healthBarInner').style.width=hp+'%';
   document.getElementById('healthText').textContent=hp;
   document.getElementById('healthWrap').classList.toggle('critical', hp>0 && hp<=25);
+  const stam=Math.max(0, Math.round(stamina));
+  document.getElementById('staminaBarInner').style.width=(stam/stats.maxStamina*100)+'%';
+  document.getElementById('staminaWrap').classList.toggle('depleted', stam<=15);
   if(playerClass==='mage'){
     document.getElementById('manaWrap').style.display='block';
     const mp=Math.max(0, Math.round(mana));
@@ -1192,6 +1561,7 @@ function updateHUD(){
   const keyEl=document.getElementById('keyStatusVal');
   keyEl.textContent = hasKey ? 'Sim' : 'Não';
   keyEl.classList.toggle('gotkey', hasKey);
+  document.getElementById('abilityCountVal').textContent=ownedAbilities.length;
   document.getElementById('upgradeCountVal').textContent=upgradePoints;
 }
 function hitFlashScreen(){
@@ -1203,15 +1573,12 @@ function hitFlashScreen(){
 /* ================= MINIMAP ================= */
 const minimapCanvas=document.getElementById('minimapCanvas');
 const minimapCtx=minimapCanvas.getContext('2d');
-function drawMinimap(){
+
+function updateVisitedCells(){
   const cols=currentCols, rows=currentRows;
   if(!currentGrid || currentGrid.length===0 || !cols || !rows) return;
-  const W=minimapCanvas.width, H=minimapCanvas.height;
-  minimapCtx.clearRect(0,0,W,H);
-  minimapCtx.fillStyle='rgba(10,7,4,0.55)'; minimapCtx.fillRect(0,0,W,H);
-  const cellPx=Math.min(W/cols, H/rows);
   const pc=Math.floor(camera.position.x/CELL), pr=Math.floor(camera.position.z/CELL);
-  const R=3;
+  const R=3+((stats&&stats.mapRadiusBonus)||0);
   for(let dr=-R;dr<=R;dr++){
     for(let dc=-R;dc<=R;dc++){
       const rr=pr+dr, cc=pc+dc;
@@ -1219,51 +1586,159 @@ function drawMinimap(){
       if(dr*dr+dc*dc<=R*R) visited.add(rr+','+cc);
     }
   }
-  visited.forEach(key=>{
-    const parts=key.split(',');
-    const r=parseInt(parts[0],10), c=parseInt(parts[1],10);
-    const isWall=currentGrid[r][c]==='#';
-    minimapCtx.fillStyle = isWall ? 'rgba(90,78,60,0.55)' : 'rgba(180,160,120,0.28)';
-    minimapCtx.fillRect(c*cellPx, r*cellPx, cellPx+0.6, cellPx+0.6);
-  });
+}
+
+function drawMinimap(){
+  const cols=currentCols, rows=currentRows;
+  if(!currentGrid || currentGrid.length===0 || !cols || !rows) return;
+  updateVisitedCells();
+  const W=minimapCanvas.width, H=minimapCanvas.height;
+  minimapCtx.clearRect(0,0,W,H);
+  minimapCtx.fillStyle='rgba(10,7,4,0.55)'; minimapCtx.fillRect(0,0,W,H);
+
+  const zoomPx=20;
+  const px=camera.position.x/CELL, pz=camera.position.z/CELL;
+  const cellsRadius=Math.ceil((Math.max(W,H)/2)/zoomPx)+1;
+  const pcCell=Math.floor(px), prCell=Math.floor(pz);
+  function mmPoint(wx,wz){ return { x: W/2+(wx/CELL-px)*zoomPx, y: H/2+(wz/CELL-pz)*zoomPx }; }
+
+  for(let r=prCell-cellsRadius; r<=prCell+cellsRadius; r++){
+    for(let c=pcCell-cellsRadius; c<=pcCell+cellsRadius; c++){
+      if(r<0||r>=rows||c<0||c>=cols) continue;
+      if(!visited.has(r+','+c)) continue;
+      const isWall=currentGrid[r][c]==='#';
+      const sx=W/2+(c-px)*zoomPx, sy=H/2+(r-pz)*zoomPx;
+      minimapCtx.fillStyle = isWall ? 'rgba(90,78,60,0.6)' : 'rgba(180,160,120,0.32)';
+      minimapCtx.fillRect(sx-zoomPx/2, sy-zoomPx/2, zoomPx+0.6, zoomPx+0.6);
+    }
+  }
   chests.forEach(ch=>{
     if(ch.opened) return;
     const cc=Math.floor(ch.x/CELL), rr=Math.floor(ch.z/CELL);
     if(!visited.has(rr+','+cc)) return;
+    const p=mmPoint(ch.x,ch.z);
     minimapCtx.fillStyle='#f0c877';
-    minimapCtx.beginPath(); minimapCtx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, 2.4,0,Math.PI*2); minimapCtx.fill();
+    minimapCtx.beginPath(); minimapCtx.arc(p.x,p.y,2.6,0,Math.PI*2); minimapCtx.fill();
   });
+  if(merchant){
+    const cc=Math.floor(merchant.x/CELL), rr=Math.floor(merchant.z/CELL);
+    if(visited.has(rr+','+cc)){
+      const p=mmPoint(merchant.x,merchant.z);
+      minimapCtx.fillStyle='#7dc4ff';
+      minimapCtx.beginPath(); minimapCtx.arc(p.x,p.y,3,0,Math.PI*2); minimapCtx.fill();
+    }
+  }
   if(stairsPos){
     const cc=Math.floor(stairsPos.x/CELL), rr=Math.floor(stairsPos.z/CELL);
     if(visited.has(rr+','+cc)){
-      minimapCtx.fillStyle='#5cf0a0';
-      minimapCtx.beginPath(); minimapCtx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, 3,0,Math.PI*2); minimapCtx.fill();
+      const p=mmPoint(stairsPos.x,stairsPos.z);
+      minimapCtx.fillStyle = hasKey ? '#5cf0a0' : '#8a8a8a';
+      minimapCtx.beginPath(); minimapCtx.arc(p.x,p.y,3.2,0,Math.PI*2); minimapCtx.fill();
     }
   }
   enemies.forEach(en=>{
     if(!en.alive) return;
     const cc=Math.floor(en.group.position.x/CELL), rr=Math.floor(en.group.position.z/CELL);
     if(!visited.has(rr+','+cc)) return;
+    const p=mmPoint(en.group.position.x, en.group.position.z);
     minimapCtx.fillStyle = en.isBoss? '#ff2ecb' : '#e04040';
-    minimapCtx.beginPath(); minimapCtx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, en.isBoss?3.6:2, 0, Math.PI*2); minimapCtx.fill();
+    minimapCtx.beginPath(); minimapCtx.arc(p.x,p.y, en.isBoss?4:2.2, 0, Math.PI*2); minimapCtx.fill();
   });
   minimapCtx.save();
-  minimapCtx.translate(pc*cellPx+cellPx/2, pr*cellPx+cellPx/2);
+  minimapCtx.translate(W/2,H/2);
   minimapCtx.rotate(yaw);
   minimapCtx.fillStyle='#fff2d0';
   minimapCtx.beginPath();
-  minimapCtx.moveTo(0,-5); minimapCtx.lineTo(3.5,4); minimapCtx.lineTo(-3.5,4); minimapCtx.closePath(); minimapCtx.fill();
+  minimapCtx.moveTo(0,-6); minimapCtx.lineTo(4,5); minimapCtx.lineTo(-4,5); minimapCtx.closePath(); minimapCtx.fill();
   minimapCtx.restore();
+}
+
+function drawFullMap(){
+  const cols=currentCols, rows=currentRows;
+  if(!currentGrid || currentGrid.length===0) return;
+  const canvas=document.getElementById('fullMapCanvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0a0704'; ctx.fillRect(0,0,W,H);
+  const cellPx=Math.min(W/cols, H/rows);
+  const pc=Math.floor(camera.position.x/CELL), pr=Math.floor(camera.position.z/CELL);
+
+  visited.forEach(key=>{
+    const parts=key.split(',');
+    const r=parseInt(parts[0],10), c=parseInt(parts[1],10);
+    const isWall=currentGrid[r][c]==='#';
+    ctx.fillStyle = isWall ? 'rgba(90,78,60,0.7)' : 'rgba(180,160,120,0.35)';
+    ctx.fillRect(c*cellPx, r*cellPx, cellPx+0.6, cellPx+0.6);
+  });
+  chests.forEach(ch=>{
+    if(ch.opened) return;
+    const cc=Math.floor(ch.x/CELL), rr=Math.floor(ch.z/CELL);
+    if(!visited.has(rr+','+cc)) return;
+    ctx.fillStyle='#f0c877';
+    ctx.beginPath(); ctx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, cellPx*0.22, 0, Math.PI*2); ctx.fill();
+  });
+  if(merchant){
+    const cc=Math.floor(merchant.x/CELL), rr=Math.floor(merchant.z/CELL);
+    if(visited.has(rr+','+cc)){
+      ctx.fillStyle='#7dc4ff';
+      ctx.beginPath(); ctx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, cellPx*0.25, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  if(stairsPos){
+    const cc=Math.floor(stairsPos.x/CELL), rr=Math.floor(stairsPos.z/CELL);
+    if(visited.has(rr+','+cc)){
+      ctx.fillStyle = hasKey ? '#5cf0a0' : '#8a8a8a';
+      ctx.beginPath(); ctx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, cellPx*0.28, 0, Math.PI*2); ctx.fill();
+    }
+  }
+  enemies.forEach(en=>{
+    if(!en.alive) return;
+    const cc=Math.floor(en.group.position.x/CELL), rr=Math.floor(en.group.position.z/CELL);
+    if(!visited.has(rr+','+cc)) return;
+    ctx.fillStyle = en.isBoss? '#ff2ecb' : '#e04040';
+    ctx.beginPath(); ctx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, cellPx*(en.isBoss?0.32:0.18), 0, Math.PI*2); ctx.fill();
+  });
+  ctx.save();
+  ctx.translate(pc*cellPx+cellPx/2, pr*cellPx+cellPx/2);
+  ctx.rotate(yaw);
+  ctx.fillStyle='#fff2d0';
+  ctx.beginPath();
+  ctx.moveTo(0,-cellPx*0.42); ctx.lineTo(cellPx*0.3,cellPx*0.34); ctx.lineTo(-cellPx*0.3,cellPx*0.34); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+function toggleFullMap(){
+  const scr=document.getElementById('fullMapScreen');
+  if(scr.classList.contains('hidden')){
+    gameActive=false;
+    document.exitPointerLock();
+    document.getElementById('fullMapFloorNum').textContent=floor;
+    drawFullMap();
+    scr.classList.remove('hidden');
+  } else {
+    scr.classList.add('hidden');
+    lockPointer();
+  }
 }
 
 /* ================= CONTROLS ================= */
 const keys={};
 window.addEventListener('keydown', e=>{
   keys[e.code]=true;
-  if(e.code==='KeyE' && currentNearChest){ openChest(currentNearChest); }
+  if(e.code==='KeyE'){
+    if(currentNearChest){ openChest(currentNearChest); }
+    else if(currentNearMerchant && gameActive && !gameOver){ openShopScreen(); }
+  }
   if(e.code==='KeyU' && gameStarted && !gameOver){
     if(document.getElementById('upgradeScreen').classList.contains('hidden')) openUpgradeMenu();
     else closeUpgradeMenu();
+  }
+  if(e.code==='KeyI' && gameStarted && !gameOver){
+    if(document.getElementById('inventoryScreen').classList.contains('hidden')) openInventoryScreen();
+    else closeInventoryScreen();
+  }
+  if(e.code==='KeyM' && gameStarted && !gameOver){
+    toggleFullMap();
   }
 });
 window.addEventListener('keyup', e=>{ keys[e.code]=false; });
@@ -1286,6 +1761,10 @@ const startScreen=document.getElementById('startScreen');
 const pauseScreen=document.getElementById('pauseScreen');
 const optionsScreen=document.getElementById('optionsScreen');
 const upgradeScreen=document.getElementById('upgradeScreen');
+const abilityScreen=document.getElementById('abilityScreen');
+const shopScreen=document.getElementById('shopScreen');
+const inventoryScreen=document.getElementById('inventoryScreen');
+const fullMapScreen=document.getElementById('fullMapScreen');
 const gameOverScreen=document.getElementById('gameOverScreen');
 const victoryScreen=document.getElementById('victoryScreen');
 
@@ -1349,9 +1828,12 @@ document.getElementById('restartBtn2').addEventListener('click', ()=>{
   lockPointer();
 });
 document.getElementById('closeUpgradeBtn').addEventListener('click', closeUpgradeMenu);
+document.getElementById('closeShopBtn').addEventListener('click', closeShopScreen);
+document.getElementById('closeInventoryBtn').addEventListener('click', closeInventoryScreen);
+document.getElementById('closeFullMapBtn').addEventListener('click', toggleFullMap);
 
 function anyOverlayOpen(){
-  return [mainMenuScreen,difficultyScreen,classSelectScreen,startScreen,optionsScreen,upgradeScreen,gameOverScreen,victoryScreen].some(el=>!el.classList.contains('hidden'));
+  return [mainMenuScreen,difficultyScreen,classSelectScreen,startScreen,optionsScreen,upgradeScreen,abilityScreen,shopScreen,inventoryScreen,fullMapScreen,gameOverScreen,victoryScreen].some(el=>!el.classList.contains('hidden'));
 }
 document.addEventListener('pointerlockchange', ()=>{
   if(document.pointerLockElement===renderer.domElement){
@@ -1405,9 +1887,11 @@ document.querySelectorAll('#upgradeScreen [data-attr]').forEach(btn=>{
 
 function beginGame(){
   gameOver=false; gameStarted=true;
-  score=0; upgradePoints=0; killCount=0;
+  score=0; upgradePoints=0; killCount=0; ownedAbilities=[];
   stats=Object.assign({regen:0}, CLASS_CONFIG[playerClass]);
-  health=stats.maxHp; mana=stats.maxMana;
+  health=stats.maxHp; mana=stats.maxMana; stamina=stats.maxStamina; isSprinting=false;
+  ownedWeapons=[WEAPON_CATALOG[playerClass][0].id];
+  equippedWeaponId=WEAPON_CATALOG[playerClass][0].id;
   buildWeaponViewmodel();
   updateHUD();
   buildFloor(1);
@@ -1444,14 +1928,19 @@ function updatePlayer(dt){
   if(keys['KeyD']){ mx+=right.x; mz+=right.z; }
   const len=Math.hypot(mx,mz);
   if(len>0){ mx/=len; mz/=len; }
-  const speed=stats.moveSpeed;
+  const sprintHeld = !!(keys['ShiftLeft']||keys['ShiftRight']);
+  isSprinting = sprintHeld && len>0 && stamina>2;
+  const speed=stats.moveSpeed*(isSprinting?SPRINT_SPEED_MUL:1);
+  if(isSprinting){
+    stamina=Math.max(0, stamina-SPRINT_DRAIN*(stats.sprintCostMul||1)*dt);
+  }
   const dx=mx*speed*dt, dz=mz*speed*dt;
   const pos={x:camera.position.x, z:camera.position.z};
   tryMoveEntity(pos,dx,dz,0.35);
   camera.position.x=pos.x; camera.position.z=pos.z;
   if(len>0){
     footstepTimer-=dt;
-    if(footstepTimer<=0){ playSound('step'); footstepTimer=0.4; }
+    if(footstepTimer<=0){ playSound('step'); footstepTimer=Math.max(0.2, 1.7/speed); }
   }
 }
 function updateEnemies(dt,t){
@@ -1470,9 +1959,10 @@ function updateEnemies(dt,t){
       en.attackCd-=dt;
       if(en.attackCd<=0){
         en.attackCd=1.0;
-        health-=en.dmg;
+        health-=en.dmg*(1-(stats.damageReduction||0));
         hitFlashScreen();
         playSound('hurt');
+        shakeIntensity=Math.max(shakeIntensity, 1);
         updateHUD();
         if(health<=0){ health=0; updateHUD(); endGame(); }
       }
@@ -1480,6 +1970,12 @@ function updateEnemies(dt,t){
     if(en.hitFlash>0){
       en.hitFlash-=dt;
       en.parts.torso.material.color.setHex(en.hitFlash>0?0xff5050:en.baseColor);
+    }
+    if(en.healthBarFg){
+      const frac=Math.max(0, en.hp/en.maxHp);
+      en.healthBarFg.scale.x=Math.max(0.001, frac);
+      en.healthBarFg.position.x=-(en.barW*(1-frac))/2;
+      en.healthBarFg.material.color.setHex(frac>0.5?0x3ad13a:(frac>0.25?0xd8c23a:0xd13a3a));
     }
   }
 }
@@ -1516,6 +2012,7 @@ function updateWeaponAnim(t){
   }
 }
 
+let shakeIntensity=0;
 const clock=new THREE.Clock();
 function animate(){
   requestAnimationFrame(animate);
@@ -1527,20 +2024,33 @@ function animate(){
   updateTorches(t);
   updateTracers(dt);
   updateWeaponAnim(t);
+  updateDamageNumbers(dt);
+  updateDyingEnemies(dt);
+  if(shakeIntensity>0) shakeIntensity=Math.max(0, shakeIntensity-dt*4);
 
   if(gameActive && !gameOver){
     updatePlayer(dt);
     updateEnemies(dt,t);
     updateInteractables(dt);
     if(playerClass==='mage'){ mana=Math.min(stats.maxMana, mana+stats.manaRegen*dt); }
+    if(!isSprinting){ stamina=Math.min(stats.maxStamina, stamina+STAMINA_REGEN*(stats.staminaRegenMul||1)*dt); }
     if(stats.regen && health<stats.maxHp){ health=Math.min(stats.maxHp, health+stats.regen*dt); }
     updateHUD();
+    const targetFov = isSprinting ? 82 : 74;
+    if(Math.abs(camera.fov-targetFov)>0.05){ camera.fov += (targetFov-camera.fov)*Math.min(1, dt*6); camera.updateProjectionMatrix(); }
   } else if(!gameOver && gameStarted){
     updateEnemies(0,t);
   }
 
   drawMinimap();
+
+  let shakeOffset=null;
+  if(shakeIntensity>0){
+    shakeOffset=new THREE.Vector3((Math.random()-0.5)*shakeIntensity*0.12, (Math.random()-0.5)*shakeIntensity*0.08, (Math.random()-0.5)*shakeIntensity*0.12);
+    camera.position.add(shakeOffset);
+  }
   renderer.render(scene, camera);
+  if(shakeOffset) camera.position.sub(shakeOffset);
 }
 animate();
 
