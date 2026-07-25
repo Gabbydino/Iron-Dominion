@@ -51,7 +51,8 @@
     position:fixed;left:50%;top:50%;width:28px;height:28px;transform:translate(-50%,-50%);
     z-index:7;pointer-events:none;filter:drop-shadow(0 0 3px rgba(0,0,0,.9));
   }
-  #crosshair svg{width:100%;height:100%;}
+  #crosshair svg{width:100%;height:100%;transition:opacity .12s ease;}
+  #crosshair.cooldown svg{opacity:.32;}
 
   #hud{position:fixed;inset:0;z-index:8;pointer-events:none;}
 
@@ -89,17 +90,35 @@
   #statsPlaque div{display:flex;align-items:center;justify-content:flex-end;gap:7px;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:3px 0;}
   #statsPlaque svg{width:14px;height:14px;flex:none;}
   #statsPlaque span{color:var(--gold-bright);font-weight:bold;}
+  #statsPlaque span.gotkey{color:#5cf0a0;}
 
   #floorPlaque{position:absolute;left:50%;top:18px;transform:translateX(-50%);padding:7px 24px;text-align:center;white-space:nowrap;}
   #floorPlaque .fnum{color:var(--gold-bright);font-size:14px;letter-spacing:3px;text-transform:uppercase;}
   #floorPlaque .fname{display:block;color:#a58a5c;font-size:10.5px;letter-spacing:2px;margin-top:2px;font-family:Georgia,serif;text-transform:none;}
 
-  #minimapWrap{position:absolute;left:22px;top:22px;width:168px;height:168px;padding:5px;}
-  #minimapCanvas{width:100%;height:100%;display:block;border:1px solid rgba(199,154,75,.4);}
+  #minimapWrap{
+    position:absolute;left:22px;top:26px;width:172px;height:172px;border-radius:50%;
+    background:radial-gradient(circle at 50% 50%, #1c150d 0%, #0a0704 100%);
+    border:4px solid #6b5330;
+    box-shadow:0 0 0 2px var(--gold), 0 0 0 6px #241c12, inset 0 0 24px rgba(0,0,0,.85), 0 8px 18px rgba(0,0,0,.6);
+    padding:6px;overflow:hidden;
+  }
+  #minimapWrap::after{
+    content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle, transparent 52%, rgba(0,0,0,.6) 100%);
+    box-shadow:inset 0 0 0 1px rgba(199,154,75,.35);
+  }
+  #minimapCanvas{width:100%;height:100%;display:block;border-radius:50%;}
+  #minimapLabel{
+    position:absolute;left:50%;top:-13px;transform:translateX(-50%);z-index:2;
+    background:linear-gradient(180deg,#3a2f1f,#160f0a);border:1px solid var(--gold);border-radius:3px;
+    color:var(--gold-bright);font-size:9.5px;letter-spacing:2.5px;padding:2px 10px;text-transform:uppercase;
+    box-shadow:0 3px 6px rgba(0,0,0,.5);
+  }
 
   #muteBtn{
-    position:absolute;left:200px;top:22px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;
-    color:var(--gold-bright);font-size:18px;cursor:pointer;pointer-events:auto;border-radius:50%;user-select:none;
+    position:absolute;left:206px;top:34px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+    color:var(--gold-bright);font-size:17px;cursor:pointer;pointer-events:auto;border-radius:50%;user-select:none;
   }
   #muteBtn.muted{opacity:.4;text-decoration:line-through;}
 
@@ -170,6 +189,24 @@
   .upgradeInfo strong{display:block;color:#e7c88a;font-size:13.5px;letter-spacing:1px;}
   .upgradeInfo span{font-size:11.5px;color:#a58a5c;font-family:Georgia,serif;}
   #upgradePointsVal{color:var(--gold-bright);font-weight:bold;}
+
+  /* options screen */
+  .optionRow{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:12px 2px;border-bottom:1px dashed rgba(199,154,75,.25);text-align:left;}
+  .optionRow:last-child{border-bottom:none;}
+  .optionRow label{color:#e7c88a;font-size:13px;letter-spacing:1px;font-family:Georgia,serif;min-width:110px;}
+  .optionRow input[type=range]{
+    -webkit-appearance:none;appearance:none;width:180px;height:6px;border-radius:3px;
+    background:linear-gradient(180deg,#241c12,#0e0a06);border:1px solid var(--iron);cursor:pointer;
+  }
+  .optionRow input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, var(--gold-bright), var(--gold));
+    border:1px solid #7a5c2e;box-shadow:0 0 6px rgba(0,0,0,.6);cursor:pointer;
+  }
+  .optionRow input[type=range]::-moz-range-thumb{
+    width:16px;height:16px;border-radius:50%;background:var(--gold-bright);border:1px solid #7a5c2e;cursor:pointer;
+  }
+  .keyHint{font-size:12px;color:#a58a5c;font-family:Georgia,serif;line-height:1.8;margin-top:8px;}
 </style>
 </head>
 <body>
@@ -224,6 +261,10 @@
       <path d="M3 10.5 Q12 4.5 21 10.5" fill="none" stroke="currentColor" stroke-width="1.4"/>
       <rect x="10.8" y="10.5" width="2.4" height="3.6" fill="currentColor"/>
     </g>
+    <g id="icon-key">
+      <circle cx="7" cy="8" r="4.2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M10 11 L20 21 M15.5 16.5 L18.3 19.3 M13 14 L15.5 16.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
   </defs>
 </svg>
 
@@ -244,7 +285,7 @@
 </div>
 
 <div id="hud">
-  <div id="minimapWrap" class="ornate"><canvas id="minimapCanvas" width="160" height="160"></canvas></div>
+  <div id="minimapWrap"><span id="minimapLabel">Mapa</span><canvas id="minimapCanvas" width="160" height="160"></canvas></div>
   <div id="muteBtn" class="ornate">&#9834;</div>
   <div id="floorPlaque" class="ornate">
     <div class="fnum">Andar <span id="floorNum">1</span> / 30</div>
@@ -266,7 +307,7 @@
 
   <div id="statsPlaque" class="ornate">
     <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-coin"/></svg>Pontos: <span id="scoreVal">0</span></div>
-    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-skull"/></svg>Inimigos: <span id="enemyCountVal">0</span></div>
+    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-key"/></svg>Chave: <span id="keyStatusVal">Não</span></div>
     <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-scroll"/></svg>Aprimoramentos: <span id="upgradeCountVal">0</span></div>
   </div>
 
@@ -280,8 +321,44 @@
   </div>
 </div>
 
+<!-- Main menu -->
+<div class="overlay" id="mainMenuScreen">
+  <div class="flourish">❖ ❖ ❖</div>
+  <div class="title">Dungeon Shooter</div>
+  <div class="subtitle">uma masmorra medieval de 30 andares</div>
+  <button class="btn" id="goDifficultyBtn">Iniciar</button>
+  <button class="btn" id="goOptionsBtn" style="background:linear-gradient(180deg,#3a3226,#1c170f);">Opções</button>
+</div>
+
+<!-- Difficulty selection -->
+<div class="overlay hidden" id="difficultyScreen">
+  <div class="flourish">❖</div>
+  <div class="title" style="font-size:38px;">Dificuldade</div>
+  <div class="subtitle">escolha o desafio</div>
+  <div class="classRow">
+    <div class="classCard ornate" data-difficulty="easy">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-shield"/></svg>
+      <h3>Fácil</h3>
+      <p>Menos inimigos e mais fracos. Ideal para explorar a masmorra com calma.</p>
+      <div class="statline">Recomendado para iniciantes</div>
+    </div>
+    <div class="classCard ornate" data-difficulty="normal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-swords"/></svg>
+      <h3>Médio</h3>
+      <p>Desafio equilibrado, com uma masmorra bem povoada e perigosa.</p>
+      <div class="statline">Experiência padrão</div>
+    </div>
+    <div class="classCard ornate" data-difficulty="hard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-skull"/></svg>
+      <h3>Difícil</h3>
+      <p>Hordas maiores e inimigos mais fortes e rápidos. Só para veteranos.</p>
+      <div class="statline">Alta dificuldade</div>
+    </div>
+  </div>
+</div>
+
 <!-- Class selection -->
-<div class="overlay" id="classSelectScreen">
+<div class="overlay hidden" id="classSelectScreen">
   <div class="flourish">❖ ❖ ❖</div>
   <div class="title" style="font-size:44px;">Dungeon Shooter</div>
   <div class="subtitle">escolha seu destino</div>
@@ -311,7 +388,8 @@
     <p><span class="key">Mouse</span> olhar &nbsp; <span class="key">Clique</span> atacar</p>
     <p><span class="key">E</span> abrir baú &nbsp; <span class="key">U</span> aprimorar &nbsp; <span class="key">ESC</span> pausar</p>
     <div class="divider">❖</div>
-    <p>Desça 30 andares cada vez mais perigosos, enfrente ao menos 15 inimigos por andar, saqueie baús e aprimore seus atributos até encontrar a escadaria de cada nível.</p>
+    <p>Desça 30 andares cada vez mais perigosos e saqueie baús para aprimorar seus atributos. A escadaria de cada andar fica trancada — encontre a chave escondida em um dos baús para destrancá-la.</p>
+    <p class="keyHint">Você não sabe quantos inimigos espreitam em cada andar. Fique atento.</p>
   </div>
   <button class="btn" id="startBtn">Entrar na Masmorra</button>
 </div>
@@ -320,6 +398,24 @@
   <div class="flourish">❖</div>
   <div class="title" style="font-size:38px;">Pausado</div>
   <button class="btn" id="resumeBtn">Continuar</button>
+  <button class="btn" id="pauseOptionsBtn" style="background:linear-gradient(180deg,#3a3226,#1c170f);">Opções</button>
+</div>
+
+<!-- Options -->
+<div class="overlay hidden" id="optionsScreen">
+  <div class="flourish">❖</div>
+  <div class="title" style="font-size:34px;">Opções</div>
+  <div class="panel ornate">
+    <div class="optionRow">
+      <label>Música</label>
+      <input type="range" id="musicVolumeSlider" min="0" max="100" value="60">
+    </div>
+    <div class="optionRow">
+      <label>Efeitos</label>
+      <input type="range" id="sfxVolumeSlider" min="0" max="100" value="80">
+    </div>
+  </div>
+  <button class="btn" id="backOptionsBtn">Voltar</button>
 </div>
 
 <!-- Upgrade menu -->
@@ -373,12 +469,18 @@
 
 /* ================= AUDIO ================= */
 let audioCtx=null, masterGain=null, musicGain=null, sfxGain=null, musicTimeout=null, muted=false;
+let musicVolume=0.6, sfxVolume=0.8;
+function applyVolumes(){
+  if(musicGain) musicGain.gain.value = 0.4*musicVolume;
+  if(sfxGain) sfxGain.gain.value = 0.9*sfxVolume;
+}
 function initAudio(){
   if(audioCtx) return;
   audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  masterGain = audioCtx.createGain(); masterGain.gain.value = 0.55; masterGain.connect(audioCtx.destination);
-  musicGain = audioCtx.createGain(); musicGain.gain.value = 0.24; musicGain.connect(masterGain);
-  sfxGain = audioCtx.createGain(); sfxGain.gain.value = 0.7; sfxGain.connect(masterGain);
+  masterGain = audioCtx.createGain(); masterGain.gain.value = muted?0:1; masterGain.connect(audioCtx.destination);
+  musicGain = audioCtx.createGain(); musicGain.connect(masterGain);
+  sfxGain = audioCtx.createGain(); sfxGain.connect(masterGain);
+  applyVolumes();
   startMusic();
 }
 function noiseBuffer(duration){
@@ -489,8 +591,17 @@ function scheduleMelody(){
 }
 document.getElementById('muteBtn').addEventListener('click', ()=>{
   muted = !muted;
-  if(masterGain) masterGain.gain.value = muted?0:0.55;
+  if(masterGain) masterGain.gain.value = muted?0:1;
   document.getElementById('muteBtn').classList.toggle('muted', muted);
+});
+document.getElementById('musicVolumeSlider').addEventListener('input', (e)=>{
+  musicVolume = e.target.value/100;
+  applyVolumes();
+});
+document.getElementById('sfxVolumeSlider').addEventListener('input', (e)=>{
+  sfxVolume = e.target.value/100;
+  applyVolumes();
+  if(audioCtx) playSound('hit');
 });
 
 /* ================= CLASS CONFIG ================= */
@@ -501,6 +612,13 @@ const CLASS_CONFIG = {
 let playerClass = 'warrior';
 let stats = null;
 let health=100, mana=0;
+
+const DIFFICULTY_CONFIG = {
+  easy:{ name:'Fácil', minEnemies:10, statMul:0.8, speedMul:0.9 },
+  normal:{ name:'Médio', minEnemies:15, statMul:1.0, speedMul:1.0 },
+  hard:{ name:'Difícil', minEnemies:20, statMul:1.25, speedMul:1.15 }
+};
+let difficulty='normal';
 
 /* ================= THEMES ================= */
 const THEMES = [
@@ -515,7 +633,7 @@ function getTheme(f){ return THEMES.find(t=>f>=t.min&&f<=t.max) || THEMES[0]; }
 
 /* ================= MAZE GENERATION ================= */
 const CELL = 4;
-const WALL_H = 4.6;
+const WALL_H = 3.3;
 let currentGrid=[], currentCols=13, currentRows=13;
 let visited = new Set();
 
@@ -595,7 +713,7 @@ scene.fog = new THREE.FogExp2(0x070502, 0.052);
 
 const camera = new THREE.PerspectiveCamera(74, window.innerWidth/window.innerHeight, 0.1, 200);
 camera.rotation.order='YXZ';
-camera.position.set(6,1.7,6);
+camera.position.set(6,1.62,6);
 scene.add(camera);
 
 const renderer = new THREE.WebGLRenderer({antialias:true});
@@ -648,6 +766,9 @@ function makeStoneTexture(base, mortar, size, cellPx){
 /* ================= FLOOR STATE ================= */
 const wallGeo = new THREE.BoxGeometry(CELL, WALL_H, CELL);
 let wallMat=null, floorMat=null, ceilMat=null, floorMesh=null, ceilingMesh=null, stairsMesh=null, stairsPos=null;
+let stairsDisc=null, stairsLight=null, stairsGate=null, stairsTheme=null;
+let ceilingBeams=[];
+let hasKey=false, lockedStairsMsgCd=0;
 let wallMeshes=[], torches=[], enemies=[], chests=[];
 let floor = 1;
 let killCount=0, score=0, upgradePoints=0;
@@ -663,23 +784,27 @@ function clearFloor(){
   stairsPos=null;
   if(floorMesh){ scene.remove(floorMesh); floorMesh.geometry.dispose(); if(floorMat){ if(floorMat.map) floorMat.map.dispose(); floorMat.dispose(); floorMat=null; } floorMesh=null; }
   if(ceilingMesh){ scene.remove(ceilingMesh); ceilingMesh.geometry.dispose(); if(ceilMat){ if(ceilMat.map) ceilMat.map.dispose(); ceilMat.dispose(); ceilMat=null; } ceilingMesh=null; }
+  ceilingBeams.forEach(b=>scene.remove(b)); ceilingBeams=[];
   activeTracers.forEach(tr=>scene.remove(tr.line)); activeTracers=[];
 }
 
-function makeTorch(x,z,color){
+function makeTorch(x,z,color,angle){
   const grp=new THREE.Group();
-  const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,0.9,6), new THREE.MeshStandardMaterial({color:0x2b1c10, roughness:1}));
-  pole.position.y=2.1; grp.add(pole);
-  const flame=new THREE.Mesh(new THREE.SphereGeometry(0.14,8,8), new THREE.MeshBasicMaterial({color:color}));
-  flame.position.y=2.62; grp.add(flame);
-  const light=new THREE.PointLight(color, 1.6, 11, 2);
-  light.position.y=2.62; grp.add(light);
+  const bracket=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.07,0.22), new THREE.MeshStandardMaterial({color:0x241a10, roughness:0.9, metalness:0.35}));
+  bracket.position.set(0,2.05,-0.06); grp.add(bracket);
+  const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.07,0.62,6), new THREE.MeshStandardMaterial({color:0x2b1c10, roughness:1}));
+  pole.position.set(0,2.18,0.05); pole.rotation.x=0.18; grp.add(pole);
+  const flame=new THREE.Mesh(new THREE.SphereGeometry(0.13,8,8), new THREE.MeshBasicMaterial({color:color}));
+  flame.position.set(0,2.56,0.13); grp.add(flame);
+  const light=new THREE.PointLight(color, 1.6, 10, 2);
+  light.position.set(0,2.56,0.13); grp.add(light);
   grp.position.set(x,0,z);
+  grp.rotation.y=angle||0;
   scene.add(grp);
   torches.push({light,flame,phase:Math.random()*10, base:1.6});
 }
 
-function makeChest(x,z){
+function makeChest(x,z,isKey){
   const grp=new THREE.Group();
   const baseMat=new THREE.MeshStandardMaterial({color:0x5a3a1f, roughness:0.9});
   const trimMat=new THREE.MeshStandardMaterial({color:0xc79a4b, roughness:0.5, metalness:0.6});
@@ -689,19 +814,36 @@ function makeChest(x,z){
   const lock=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.16,0.06), trimMat); lock.position.set(0,0.5,0.32); grp.add(lock);
   grp.position.set(x,0,z);
   scene.add(grp);
-  const chest={group:grp, opened:false, x:x, z:z};
+  const chest={group:grp, opened:false, x:x, z:z, isKey:!!isKey};
   chests.push(chest);
 }
 
 function makeStairs(x,z,theme){
   const grp=new THREE.Group();
-  const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.12,20), new THREE.MeshStandardMaterial({color:theme.torch, emissive:theme.torch, emissiveIntensity:0.6, roughness:0.4}));
+  const disc=new THREE.Mesh(new THREE.CylinderGeometry(0.9,0.9,0.12,20), new THREE.MeshStandardMaterial({color:0x555555, emissive:0x2a2a2a, emissiveIntensity:0.5, roughness:0.6}));
   disc.position.y=0.06; grp.add(disc);
-  const light=new THREE.PointLight(theme.torch, 1.2, 6, 2);
+  const light=new THREE.PointLight(0x888888, 1.0, 6, 2);
   light.position.y=1; grp.add(light);
+  const gate=new THREE.Group();
+  const barMat=new THREE.MeshStandardMaterial({color:0x2a2a2a, roughness:0.5, metalness:0.7});
+  for(let i=-2;i<=2;i++){
+    const bar=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,2.1,6), barMat);
+    bar.position.set(i*0.32,1.05,0);
+    gate.add(bar);
+  }
+  const topBar=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.08,0.08), barMat);
+  topBar.position.set(0,2.05,0); gate.add(topBar);
+  grp.add(gate);
   grp.position.set(x,0,z);
   scene.add(grp);
   stairsMesh=grp; stairsPos={x:x,z:z};
+  stairsDisc=disc; stairsLight=light; stairsGate=gate; stairsTheme=theme;
+}
+function unlockStairs(){
+  if(!stairsMesh) return;
+  if(stairsGate){ stairsMesh.remove(stairsGate); stairsGate=null; }
+  if(stairsDisc){ stairsDisc.material.color.setHex(stairsTheme.torch); stairsDisc.material.emissive.setHex(stairsTheme.torch); stairsDisc.material.emissiveIntensity=0.7; }
+  if(stairsLight){ stairsLight.color.setHex(stairsTheme.torch); stairsLight.intensity=1.4; }
 }
 
 const boneMat = new THREE.MeshStandardMaterial({color:0xcfc7a8, roughness:0.8});
@@ -727,9 +869,19 @@ function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss){
   enemies.push(enemy);
 }
 
-function enemyCountForFloor(f){ return Math.min(15+Math.floor(f/3), 26); }
+function enemyCountForFloor(f){
+  const cfg=DIFFICULTY_CONFIG[difficulty];
+  const count = cfg.minEnemies + Math.floor(f/3);
+  const cap = cfg.minEnemies + 11;
+  return Math.min(count, cap);
+}
 function enemyStatsForFloor(f){
-  return { hp: 2+Math.floor(f*0.6), speed: Math.min(1.5+f*0.05, 3.2), dmg: 7+Math.floor(f*0.6) };
+  const cfg=DIFFICULTY_CONFIG[difficulty];
+  return {
+    hp: Math.max(1, Math.round((2+Math.floor(f*0.6))*cfg.statMul)),
+    speed: Math.min((1.5+f*0.05)*cfg.speedMul, 3.4),
+    dmg: Math.max(1, Math.round((7+Math.floor(f*0.6))*cfg.statMul))
+  };
 }
 
 function buildFloor(f){
@@ -772,15 +924,44 @@ function buildFloor(f){
   ceilingMesh=new THREE.Mesh(new THREE.PlaneGeometry(mazeW,mazeD), ceilMat);
   ceilingMesh.rotation.x=Math.PI/2; ceilingMesh.position.set(mazeW/2,WALL_H,mazeD/2); scene.add(ceilingMesh);
 
-  scene.fog=new THREE.FogExp2(theme.fog, theme.fogDensity);
+  scene.fog=new THREE.FogExp2(theme.fog, theme.fogDensity*1.18);
   ambientLight.color.setHex(theme.ambient);
   hemiLight.color.setHex(theme.ambient);
 
-  const torchCount=Math.max(6, Math.floor(floorCells.length/14));
-  const torchCandidates=shuffleArr(floorCells.slice()).filter(c=>!(c.r===1&&c.c===1));
+  // ceiling support beams, spaced across the grid, for a low, closed-in feel
+  const beamMat=new THREE.MeshStandardMaterial({color:0x1c140c, roughness:0.95});
+  for(let r=2;r<size-1;r+=3){
+    for(let c=2;c<size-1;c+=3){
+      if(currentGrid[r][c]!=='.') continue;
+      const beam=new THREE.Mesh(new THREE.BoxGeometry(CELL*0.94,0.18,0.22), beamMat);
+      beam.position.set(c*CELL+CELL/2, WALL_H-0.14, r*CELL+CELL/2);
+      scene.add(beam); ceilingBeams.push(beam);
+      const beam2=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.18,CELL*0.94), beamMat);
+      beam2.position.set(c*CELL+CELL/2, WALL_H-0.14, r*CELL+CELL/2);
+      scene.add(beam2); ceilingBeams.push(beam2);
+    }
+  }
+
+  // torches mounted flush against wall faces, not floating mid-corridor
+  const torchCandidates=[];
+  for(const cell of floorCells){
+    if(cell.r===1 && cell.c===1) continue;
+    const dirs=[[0,-1],[0,1],[-1,0],[1,0]];
+    for(const d of dirs){
+      const nr=cell.r+d[0], nc=cell.c+d[1];
+      if(nr>=0&&nr<size&&nc>=0&&nc<size&&currentGrid[nr][nc]==='#'){
+        torchCandidates.push({floorCell:cell, wallCell:{r:nr,c:nc}, dr:cell.r-nr, dc:cell.c-nc});
+      }
+    }
+  }
+  shuffleArr(torchCandidates);
+  const torchCount=Math.max(6, Math.floor(floorCells.length/13));
   for(let i=0;i<Math.min(torchCount, torchCandidates.length);i++){
-    const cell=torchCandidates[i];
-    makeTorch(cell.c*CELL+CELL/2, cell.r*CELL+CELL/2, theme.torch);
+    const t=torchCandidates[i];
+    const wx=t.wallCell.c*CELL+CELL/2, wz=t.wallCell.r*CELL+CELL/2;
+    const px=wx+t.dc*(CELL/2+0.22), pz=wz+t.dr*(CELL/2+0.22);
+    const angle=Math.atan2(t.dc,t.dr);
+    makeTorch(px,pz,theme.torch,angle);
   }
 
   const farCells=floorCells.filter(c=>{ const d=dist[c.r][c.c]; return d>=4 && !(c.r===stairsCell.r&&c.c===stairsCell.c); });
@@ -800,16 +981,19 @@ function buildFloor(f){
   const usedCells=[{r:1,c:1},stairsCell];
   const chestCandidates=shuffleArr(floorCells.filter(c=>!usedCells.some(u=>u.r===c.r&&u.c===c.c)));
   const chestCount=3+(f%3);
+  const keyChestIndex=Math.floor(Math.random()*Math.min(chestCount, chestCandidates.length));
+  hasKey=false;
+  lockedStairsMsgCd=0;
   for(let i=0;i<Math.min(chestCount, chestCandidates.length);i++){
     const cell=chestCandidates[i];
-    makeChest(cell.c*CELL+CELL/2, cell.r*CELL+CELL/2);
+    makeChest(cell.c*CELL+CELL/2, cell.r*CELL+CELL/2, i===keyChestIndex);
   }
 
   if(f<30){
     makeStairs(stairsCell.c*CELL+CELL/2, stairsCell.r*CELL+CELL/2, theme);
   }
 
-  camera.position.set(CELL*1+CELL/2, 1.7, CELL*1+CELL/2);
+  camera.position.set(CELL*1+CELL/2, 1.62, CELL*1+CELL/2);
   yaw=0; pitch=0; camera.rotation.set(0,0,0,'YXZ');
   visited=new Set();
 
@@ -923,6 +1107,13 @@ function openChest(ch){
   ch.opened=true;
   scene.remove(ch.group);
   playSound('chest');
+  if(ch.isKey){
+    hasKey=true;
+    unlockStairs();
+    showToast('Você encontrou a Chave Enferrujada! A escada foi destrancada.');
+    updateHUD();
+    return;
+  }
   const roll=Math.random();
   if(roll<0.4){
     const g=150+floor*10; score+=g; showToast('Ouro encontrado! +'+g+' pontos');
@@ -936,7 +1127,7 @@ function openChest(ch){
   }
   updateHUD();
 }
-function updateInteractables(){
+function updateInteractables(dt){
   let nearChest=null;
   for(const ch of chests){
     if(ch.opened) continue;
@@ -946,9 +1137,17 @@ function updateInteractables(){
   currentNearChest=nearChest;
   document.getElementById('chestPrompt').classList.toggle('show', !!nearChest);
 
+  if(lockedStairsMsgCd>0) lockedStairsMsgCd-=dt;
+
   if(stairsPos && floor<30){
     const dx=camera.position.x-stairsPos.x, dz=camera.position.z-stairsPos.z;
-    if(dx*dx+dz*dz<1.4*1.4){ nextFloor(); }
+    if(dx*dx+dz*dz<1.4*1.4){
+      if(hasKey){ nextFloor(); }
+      else if(lockedStairsMsgCd<=0){
+        showToast('A escadaria está trancada. Encontre a chave em um dos baús.');
+        lockedStairsMsgCd=4;
+      }
+    }
   }
 }
 function nextFloor(){
@@ -990,7 +1189,9 @@ function updateHUD(){
     document.getElementById('manaWrap').style.display='none';
   }
   document.getElementById('scoreVal').textContent=score;
-  document.getElementById('enemyCountVal').textContent=enemies.filter(e=>e.alive).length;
+  const keyEl=document.getElementById('keyStatusVal');
+  keyEl.textContent = hasKey ? 'Sim' : 'Não';
+  keyEl.classList.toggle('gotkey', hasKey);
   document.getElementById('upgradeCountVal').textContent=upgradePoints;
 }
 function hitFlashScreen(){
@@ -1003,11 +1204,11 @@ function hitFlashScreen(){
 const minimapCanvas=document.getElementById('minimapCanvas');
 const minimapCtx=minimapCanvas.getContext('2d');
 function drawMinimap(){
+  const cols=currentCols, rows=currentRows;
+  if(!currentGrid || currentGrid.length===0 || !cols || !rows) return;
   const W=minimapCanvas.width, H=minimapCanvas.height;
   minimapCtx.clearRect(0,0,W,H);
   minimapCtx.fillStyle='rgba(10,7,4,0.55)'; minimapCtx.fillRect(0,0,W,H);
-  const cols=currentCols, rows=currentRows;
-  if(!cols||!rows) return;
   const cellPx=Math.min(W/cols, H/rows);
   const pc=Math.floor(camera.position.x/CELL), pr=Math.floor(camera.position.z/CELL);
   const R=3;
@@ -1078,22 +1279,53 @@ document.addEventListener('mousemove', e=>{
   camera.rotation.set(pitch,yaw,0,'YXZ');
 });
 
+const mainMenuScreen=document.getElementById('mainMenuScreen');
+const difficultyScreen=document.getElementById('difficultyScreen');
 const classSelectScreen=document.getElementById('classSelectScreen');
 const startScreen=document.getElementById('startScreen');
 const pauseScreen=document.getElementById('pauseScreen');
+const optionsScreen=document.getElementById('optionsScreen');
 const upgradeScreen=document.getElementById('upgradeScreen');
 const gameOverScreen=document.getElementById('gameOverScreen');
 const victoryScreen=document.getElementById('victoryScreen');
 
 let gameActive=false, gameOver=false, gameStarted=false;
+let optionsReturnTo='main';
 
 function lockPointer(){ renderer.domElement.requestPointerLock(); }
 
-document.querySelectorAll('.classCard').forEach(card=>{
+document.getElementById('goDifficultyBtn').addEventListener('click', ()=>{
+  mainMenuScreen.classList.add('hidden');
+  difficultyScreen.classList.remove('hidden');
+});
+document.getElementById('goOptionsBtn').addEventListener('click', ()=>{
+  optionsReturnTo='main';
+  mainMenuScreen.classList.add('hidden');
+  optionsScreen.classList.remove('hidden');
+});
+document.getElementById('pauseOptionsBtn').addEventListener('click', ()=>{
+  optionsReturnTo='pause';
+  pauseScreen.classList.add('hidden');
+  optionsScreen.classList.remove('hidden');
+});
+document.getElementById('backOptionsBtn').addEventListener('click', ()=>{
+  optionsScreen.classList.add('hidden');
+  if(optionsReturnTo==='pause'){ pauseScreen.classList.remove('hidden'); }
+  else { mainMenuScreen.classList.remove('hidden'); }
+});
+
+document.querySelectorAll('.classCard[data-difficulty]').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    difficulty=card.dataset.difficulty;
+    difficultyScreen.classList.add('hidden');
+    classSelectScreen.classList.remove('hidden');
+  });
+});
+document.querySelectorAll('.classCard[data-class]').forEach(card=>{
   card.addEventListener('click', ()=>{
     playerClass=card.dataset.class;
     initAudio();
-    document.getElementById('chosenClassLabel').textContent = 'você escolheu: '+CLASS_CONFIG[playerClass].name;
+    document.getElementById('chosenClassLabel').textContent = 'você escolheu: '+CLASS_CONFIG[playerClass].name+' · '+DIFFICULTY_CONFIG[difficulty].name;
     classSelectScreen.classList.add('hidden');
     document.getElementById('up-mana-row').style.display = playerClass==='mage' ? 'flex' : 'none';
     startScreen.classList.remove('hidden');
@@ -1119,7 +1351,7 @@ document.getElementById('restartBtn2').addEventListener('click', ()=>{
 document.getElementById('closeUpgradeBtn').addEventListener('click', closeUpgradeMenu);
 
 function anyOverlayOpen(){
-  return [classSelectScreen,startScreen,upgradeScreen,gameOverScreen,victoryScreen].some(el=>!el.classList.contains('hidden'));
+  return [mainMenuScreen,difficultyScreen,classSelectScreen,startScreen,optionsScreen,upgradeScreen,gameOverScreen,victoryScreen].some(el=>!el.classList.contains('hidden'));
 }
 document.addEventListener('pointerlockchange', ()=>{
   if(document.pointerLockElement===renderer.domElement){
@@ -1291,6 +1523,7 @@ function animate(){
   const t=clock.getElapsedTime();
 
   if(attackCooldownTimer>0) attackCooldownTimer-=dt;
+  document.getElementById('crosshair').classList.toggle('cooldown', attackCooldownTimer>0);
   updateTorches(t);
   updateTracers(dt);
   updateWeaponAnim(t);
@@ -1298,7 +1531,7 @@ function animate(){
   if(gameActive && !gameOver){
     updatePlayer(dt);
     updateEnemies(dt,t);
-    updateInteractables();
+    updateInteractables(dt);
     if(playerClass==='mage'){ mana=Math.min(stats.maxMana, mana+stats.manaRegen*dt); }
     if(stats.regen && health<stats.maxHp){ health=Math.min(stats.maxHp, health+stats.regen*dt); }
     updateHUD();
