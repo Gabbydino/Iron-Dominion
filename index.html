@@ -275,6 +275,15 @@
       <circle cx="12" cy="4.2" r="2.6" fill="none" stroke="currentColor" stroke-width="1.4"/>
       <circle cx="12" cy="4.2" r="0.9" fill="currentColor"/>
     </g>
+    <g id="icon-bow">
+      <path d="M6 3 Q17 12 6 21" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M6 3 L6 21" fill="none" stroke="currentColor" stroke-width="1" opacity=".7"/>
+      <path d="M3 12 L15 12 M11 8.5 L15 12 L11 15.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="icon-paladin">
+      <path d="M12 2 L21 5.5 V11.5 C21 17 17 20.5 12 22 C7 20.5 3 17 3 11.5 V5.5 Z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+      <path d="M12 7 V16 M8 11.5 H16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
     <g id="icon-mana">
       <path d="M12 3 C12 3 6 11 6 15 a6 6 0 0 0 12 0 C18 11 12 3 12 3 Z" fill="none" stroke="currentColor" stroke-width="1.4"/>
     </g>
@@ -406,6 +415,18 @@
       <p>Ataques mágicos à distância de grande poder. Vida frágil, depende de mana.</p>
       <div class="statline">Vida baixa · Dano à distância · Usa mana</div>
     </div>
+    <div class="classCard ornate" data-class="ranger">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0"><use href="#icon-bow"/></svg>
+      <h3>Arqueiro</h3>
+      <p>Disparos rápidos e precisos à distância. Ágil, sem mana, ótima chance de crítico.</p>
+      <div class="statline">Vida média · Ataque rápido à distância · Sem mana</div>
+    </div>
+    <div class="classCard ornate" data-class="paladin">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="0"><use href="#icon-paladin"/></svg>
+      <h3>Paladino</h3>
+      <p>O mais resistente de todos. Combate corpo a corpo com fé e vitalidade divina.</p>
+      <div class="statline">Vida altíssima · Regeneração · Redução de dano nata</div>
+    </div>
   </div>
 </div>
 
@@ -416,11 +437,11 @@
   <div class="subtitle" id="chosenClassLabel">uma masmorra medieval te espera</div>
   <div class="panel ornate">
     <p><span class="key">W A S D</span> mover &nbsp; <span class="key">Shift</span> correr</p>
-    <p><span class="key">Mouse</span> olhar &nbsp; <span class="key">Clique</span> atacar</p>
+    <p><span class="key">Mouse</span> olhar &nbsp; <span class="key">Clique</span> atacar &nbsp; <span class="key">Botão direito</span> bloquear</p>
     <p><span class="key">E</span> interagir &nbsp; <span class="key">U</span> aprimorar &nbsp; <span class="key">I</span> inventário &nbsp; <span class="key">M</span> mapa</p>
     <div class="divider">❖</div>
     <p>Desça 30 andares cada vez mais perigosos e saqueie baús para aprimorar seus atributos. A escadaria de cada andar fica trancada — encontre a chave escondida em um dos baús para destrancá-la.</p>
-    <p>Ataques e corridas consomem estamina, então escolha bem seus golpes. Alguns baús guardam relíquias mágicas que concedem habilidades permanentes. Um mercador errante aparece em 3 andares da masmorra — negocie por armas melhores.</p>
+    <p>Ataques e corridas consomem estamina, então escolha bem seus golpes. Alguns baús guardam relíquias mágicas que concedem habilidades permanentes. Um mercador errante aparece em 3 andares da masmorra — negocie por armas, armaduras, escudos e poções. Guerreiro e Paladino podem erguer o escudo para bloquear parte do dano.</p>
     <p class="keyHint">Você não sabe quantos inimigos espreitam em cada andar. Fique atento.</p>
   </div>
   <button class="btn" id="startBtn">Entrar na Masmorra</button>
@@ -505,6 +526,14 @@
     <div class="upgradeRow">
       <div class="upgradeInfo"><strong>Regeneração</strong><span id="up-regen-val">0</span></div>
       <button class="btn small" data-attr="regen">+1 HP/s</button>
+    </div>
+    <div class="upgradeRow">
+      <div class="upgradeInfo"><strong>Estamina Máxima</strong><span id="up-stam-val">100</span></div>
+      <button class="btn small" data-attr="stam">+20 Estamina</button>
+    </div>
+    <div class="upgradeRow">
+      <div class="upgradeInfo"><strong>Chance de Crítico</strong><span id="up-crit-val">8%</span></div>
+      <button class="btn small" data-attr="crit">+4% Crítico</button>
     </div>
     <div class="upgradeRow" id="up-mana-row">
       <div class="upgradeInfo"><strong>Mana Máxima</strong><span id="up-mana-val">0</span></div>
@@ -648,6 +677,16 @@ function playSound(name){
     osc.frequency.setValueAtTime(90,t); osc.frequency.exponentialRampToValueAtTime(35,t+0.2);
     g.gain.setValueAtTime(0.35,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.22);
     osc.connect(g); g.connect(sfxGain); osc.start(t); osc.stop(t+0.24);
+  } else if(name==='block'){
+    const osc=audioCtx.createOscillator(); osc.type='triangle';
+    const g=audioCtx.createGain();
+    osc.frequency.setValueAtTime(320,t); osc.frequency.exponentialRampToValueAtTime(180,t+0.09);
+    g.gain.setValueAtTime(0.4,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.14);
+    osc.connect(g); g.connect(sfxGain); osc.start(t); osc.stop(t+0.15);
+    const src=audioCtx.createBufferSource(); src.buffer=noiseBuffer(0.06);
+    const filt=audioCtx.createBiquadFilter(); filt.type='highpass'; filt.frequency.value=1200;
+    const ng=audioCtx.createGain(); ng.gain.setValueAtTime(0.22,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.07);
+    src.connect(filt); filt.connect(ng); ng.connect(sfxGain); src.start(t);
   } else if(name==='step'){
     const src=audioCtx.createBufferSource(); src.buffer=noiseBuffer(0.05);
     const filt=audioCtx.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=300;
@@ -705,7 +744,9 @@ document.getElementById('sfxVolumeSlider').addEventListener('input', (e)=>{
 /* ================= CLASS CONFIG ================= */
 const CLASS_CONFIG = {
   warrior:{ name:'Guerreiro', maxHp:130, damage:26, moveSpeed:4.4, attackCooldown:0.5, maxMana:0, manaRegen:0, manaCost:0, ranged:false, maxStamina:100, attackStaminaCost:24, critChance:0.08 },
-  mage:{ name:'Mago', maxHp:85, damage:32, moveSpeed:4.0, attackCooldown:0.38, maxMana:100, manaRegen:16, manaCost:16, ranged:true, maxStamina:100, attackStaminaCost:16, critChance:0.08 }
+  mage:{ name:'Mago', maxHp:85, damage:32, moveSpeed:4.0, attackCooldown:0.38, maxMana:100, manaRegen:16, manaCost:16, ranged:true, maxStamina:100, attackStaminaCost:16, critChance:0.08 },
+  ranger:{ name:'Arqueiro', maxHp:100, damage:22, moveSpeed:4.7, attackCooldown:0.32, maxMana:0, manaRegen:0, manaCost:0, ranged:true, maxStamina:110, attackStaminaCost:14, critChance:0.14 },
+  paladin:{ name:'Paladino', maxHp:160, damage:22, moveSpeed:3.9, attackCooldown:0.55, maxMana:0, manaRegen:0, manaCost:0, ranged:false, maxStamina:95, attackStaminaCost:24, critChance:0.05, regen:1, damageReduction:0.08 }
 };
 let playerClass = 'warrior';
 let stats = null;
@@ -743,7 +784,13 @@ const ABILITY_POOL = [
   { id:'mana', name:'Fluxo Arcano', desc:'Reduz o custo de mana dos ataques em 25%.', icon:'icon-mana', classFilter:'mage',
     apply:()=>{ stats.manaCost=Math.max(4, Math.round(stats.manaCost*0.75)); } },
   { id:'crit', name:'Golpe Certeiro', desc:'+15% de chance de acerto crítico (dano dobrado).', icon:'icon-reticle',
-    apply:()=>{ stats.critChance=Math.min(0.75,(stats.critChance||0)+0.15); } }
+    apply:()=>{ stats.critChance=Math.min(0.75,(stats.critChance||0)+0.15); } },
+  { id:'berserker', name:'Fúria Berserker', desc:'Quanto menor sua vida, maior o dano causado (até +60%).', icon:'icon-skull',
+    apply:()=>{ stats.berserker=true; } },
+  { id:'dodge', name:'Passo Fantasma', desc:'12% de chance de esquivar completamente de um ataque.', icon:'icon-bolt',
+    apply:()=>{ stats.dodgeChance=Math.min(0.5,(stats.dodgeChance||0)+0.12); } },
+  { id:'splash', name:'Fragmentação Arcana', desc:'Ataques mágicos também atingem um segundo inimigo próximo.', icon:'icon-mana', classFilter:'mage',
+    apply:()=>{ stats.arcaneSplash=true; } }
 ];
 let ownedAbilities=[];
 let pendingAbilityCards=[];
@@ -761,9 +808,38 @@ const WEAPON_CATALOG = {
     { id:'staff_fire', name:'Cajado de Fogo', price:320, dmgMod:14, cooldownMod:1.1, manaCostMod:4, desc:'Rajadas ardentes, custam mais mana.' },
     { id:'staff_arcane', name:'Cajado Arcano', price:360, dmgMod:-2, cooldownMod:1, manaCostMod:-6, desc:'Feitiços eficientes, custam bem menos mana.' },
     { id:'staff_storm', name:'Cajado das Tempestades', price:540, dmgMod:8, cooldownMod:0.7, manaCostMod:3, desc:'Conjura em rajadas muito rápidas.' }
+  ],
+  ranger:[
+    { id:'bow_short', name:'Arco Curto', price:0, dmgMod:0, cooldownMod:1, desc:'Seu arco inicial, leve e confiável.' },
+    { id:'bow_long', name:'Arco Longo', price:300, dmgMod:10, cooldownMod:1.2, desc:'Mais dano por flecha, porém disparos mais lentos.' },
+    { id:'bow_recurve', name:'Arco Recurvo', price:340, dmgMod:-3, cooldownMod:0.68, desc:'Disparos muito rápidos, dano reduzido por flecha.' },
+    { id:'bow_hunters', name:'Arco do Caçador', price:520, dmgMod:8, cooldownMod:0.85, desc:'Equilíbrio entre velocidade e dano, favorito dos caçadores.' }
+  ],
+  paladin:[
+    { id:'sword_blessed', name:'Espada Abençoada', price:0, dmgMod:0, cooldownMod:1, desc:'Sua lâmina inicial, abençoada pela fé.' },
+    { id:'mace_holy', name:'Maça Sagrada', price:320, dmgMod:14, cooldownMod:1.25, desc:'Golpes pesados imbuídos de luz.' },
+    { id:'sword_swift', name:'Espada Veloz', price:340, dmgMod:-3, cooldownMod:0.78, desc:'Golpes rápidos e precisos.' },
+    { id:'hammer_judgement', name:'Martelo do Juízo', price:540, dmgMod:22, cooldownMod:1.4, desc:'Dano devastador para os ímpios.' }
   ]
 };
 const MERCHANT_FLOORS = [5, 15, 25];
+const ARMOR_CATALOG = [
+  { id:'armor_leather', name:'Couro Batido', price:0, hpMod:0, speedMod:0, reductionMod:0, desc:'Proteção inicial, sem bônus nem penalidades.' },
+  { id:'armor_chain', name:'Cota de Malha', price:280, hpMod:30, speedMod:-0.3, reductionMod:0.05, desc:'Mais vida e proteção, porém mais pesada.' },
+  { id:'armor_wanderer', name:'Manto do Andarilho', price:260, hpMod:-10, speedMod:0.5, reductionMod:0, desc:'Leve e ágil, mas oferece pouca proteção.' },
+  { id:'armor_runic', name:'Armadura Rúnica', price:450, hpMod:10, speedMod:-0.1, reductionMod:0.12, desc:'Runas antigas absorvem parte do dano recebido.' }
+];
+let ownedArmors=[];
+let equippedArmorId=null;
+const SHIELD_CATALOG = [
+  { id:'shield_training', name:'Escudo de Treinamento', price:0, blockReduction:0.35, speedMod:-0.2, desc:'Escudo básico. Bloqueia 35% do dano ao segurar o botão direito.' },
+  { id:'shield_wood', name:'Escudo de Madeira', price:220, blockReduction:0.5, speedMod:-0.3, desc:'Bloqueia metade do dano recebido enquanto erguido.' },
+  { id:'shield_iron', name:'Escudo de Ferro', price:400, blockReduction:0.68, speedMod:-0.4, desc:'Reforçado com placas de ferro, bloqueia boa parte do dano.' },
+  { id:'shield_tower', name:'Escudo Torre', price:580, blockReduction:0.85, speedMod:-0.55, desc:'Proteção quase total, porém pesado — reduz bastante sua velocidade ao bloquear.' }
+];
+let ownedShields=[];
+let equippedShieldId=null;
+let isBlocking=false;
 const POTION_CATALOG = [
   { id:'potion_health', name:'Poção de Vida Maior', price:120, effect:'heal', amount:60, desc:'Restaura 60 pontos de vida instantaneamente.' },
   { id:'potion_stamina', name:'Elixir de Vigor', price:90, effect:'stamina', desc:'Restaura toda a sua estamina.' },
@@ -778,7 +854,15 @@ const WEAPON_VISUALS = {
   staff_apprentice:{ orbColor:0x7dc4ff, emissive:0x2a6cff },
   staff_fire:{ orbColor:0xff8a3c, emissive:0xff3c0a },
   staff_arcane:{ orbColor:0xb180ff, emissive:0x6a1ecf },
-  staff_storm:{ orbColor:0xbdf0ff, emissive:0x1ecfe0 }
+  staff_storm:{ orbColor:0xbdf0ff, emissive:0x1ecfe0 },
+  bow_short:{ bowColor:0x5a4028 },
+  bow_long:{ bowColor:0x3a2a18 },
+  bow_recurve:{ bowColor:0x8a6a3a },
+  bow_hunters:{ bowColor:0x6a4a28 },
+  sword_blessed:{ bladeLen:0.78, bladeColor:0xf0e6c8, hiltColor:0x3a2a18, axe:false },
+  mace_holy:{ bladeLen:0.5, bladeColor:0xf0d080, hiltColor:0x2a1c10, axe:true },
+  sword_swift:{ bladeLen:0.68, bladeColor:0xe8dcc0, hiltColor:0x2a1c10, axe:false },
+  hammer_judgement:{ bladeLen:0.5, bladeColor:0xd8c8a0, hiltColor:0x241a10, axe:true }
 };
 let ownedWeapons=[];
 let equippedWeaponId=null;
@@ -1037,26 +1121,38 @@ function makeMerchant(x,z){
 
 const boneMat = new THREE.MeshStandardMaterial({color:0xcfc7a8, roughness:0.8});
 const eyeMat = new THREE.MeshBasicMaterial({color:0xff2020});
-function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss,isArcher){
-  const clothMat=new THREE.MeshStandardMaterial({color: isArcher?0x33465a:clothColor, roughness:1});
-  const baseColor= isArcher?0x33465a:clothColor;
+function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss,isArcher,variant){
+  const isWraith = variant==='wraith';
+  const isBrute = variant==='brute';
+  const finalCloth = isArcher ? 0x33465a : (isBrute ? 0x2a1414 : clothColor);
+  const clothMat=new THREE.MeshStandardMaterial({color: finalCloth, roughness:1, transparent: isWraith, opacity: isWraith?0.6:1});
+  const baseColor= finalCloth;
   const grp=new THREE.Group();
   const torso=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.9,0.32), clothMat); torso.position.y=1.0; grp.add(torso);
-  const head=new THREE.Mesh(new THREE.SphereGeometry(0.26,10,10), boneMat); head.position.y=1.65; grp.add(head);
+  const headMat = isWraith ? new THREE.MeshStandardMaterial({color:0xcfc7a8, roughness:0.8, transparent:true, opacity:0.7}) : boneMat;
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.26,10,10), headMat); head.position.y=1.65; grp.add(head);
   const eyeL=new THREE.Mesh(new THREE.SphereGeometry(0.045,6,6), eyeMat); eyeL.position.set(-0.09,1.66,0.22); grp.add(eyeL);
   const eyeR=eyeL.clone(); eyeR.position.x=0.09; grp.add(eyeR);
   const armGeo=new THREE.BoxGeometry(0.14,0.7,0.14);
-  const armL=new THREE.Mesh(armGeo, boneMat); armL.position.set(-0.36,0.95,0); grp.add(armL);
-  const armR=new THREE.Mesh(armGeo, boneMat); armR.position.set(0.36,0.95,0); grp.add(armR);
+  const armMat = isWraith ? headMat : boneMat;
+  const armL=new THREE.Mesh(armGeo, armMat); armL.position.set(-0.36,0.95,0); grp.add(armL);
+  const armR=new THREE.Mesh(armGeo, armMat); armR.position.set(0.36,0.95,0); grp.add(armR);
   const legGeo=new THREE.BoxGeometry(0.17,0.75,0.17);
-  const legL=new THREE.Mesh(legGeo, boneMat); legL.position.set(-0.15,0.4,0); grp.add(legL);
-  const legR=new THREE.Mesh(legGeo, boneMat); legR.position.set(0.15,0.4,0); grp.add(legR);
+  const legL=new THREE.Mesh(legGeo, armMat); legL.position.set(-0.15,0.4,0); grp.add(legL);
+  const legR=new THREE.Mesh(legGeo, armMat); legR.position.set(0.15,0.4,0); grp.add(legR);
   if(isArcher){
     const bowMat=new THREE.MeshStandardMaterial({color:0x5a4028, roughness:0.9});
     const bow=new THREE.Mesh(new THREE.TorusGeometry(0.28,0.018,6,10,Math.PI), bowMat);
     bow.rotation.y=Math.PI/2; bow.position.set(0.34,1.0,0.05); grp.add(bow);
     const quiver=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.07,0.4,6), new THREE.MeshStandardMaterial({color:0x3a2a18}));
     quiver.position.set(-0.28,1.1,-0.12); quiver.rotation.z=0.25; grp.add(quiver);
+  }
+  if(isBrute){
+    const spikeMat=new THREE.MeshStandardMaterial({color:0x8a2020, roughness:0.7});
+    [[-0.2,1.3,0.17],[0.2,1.3,0.17],[0,1.35,-0.17]].forEach(p=>{
+      const spike=new THREE.Mesh(new THREE.ConeGeometry(0.06,0.18,5), spikeMat);
+      spike.position.set(p[0],p[1],p[2]); grp.add(spike);
+    });
   }
   const barY=2.02;
   const barW=0.7;
@@ -1071,10 +1167,14 @@ function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss,isArcher){
     const aura=new THREE.PointLight(0xb14bff, 1.4, 6, 2);
     aura.position.set(0,1.2,0);
     grp.add(aura);
+  } else if(isBrute){
+    grp.scale.set(1.4,1.4,1.4);
+  } else if(isWraith){
+    grp.scale.set(0.82,0.95,0.82);
   }
   grp.position.set(x,0,z);
   scene.add(grp);
-  const enemy={group:grp, hp:hp, maxHp:hp, speed:speed, dmg:dmg, alive:true, attackCd:0, hitFlash:0, baseColor:baseColor, bobPhase:Math.random()*10, isBoss:!!isBoss, isArcher:!!isArcher,
+  const enemy={group:grp, hp:hp, maxHp:hp, speed:speed, dmg:dmg, alive:true, attackCd:0, hitFlash:0, baseColor:baseColor, bobPhase:Math.random()*10, isBoss:!!isBoss, isArcher:!!isArcher, isWraith:isWraith, isBrute:isBrute,
     parts:{torso:torso,head:head}, healthBarFg:healthBarFg, healthBarBg:healthBarBg, barW:barW,
     enraged:false, chargeState:'idle', chargeCd:3, chargeTimer:0, chargeHit:false, chargeDir:null, baseSpeed:speed, baseDmg:dmg};
   enemies.push(enemy);
@@ -1180,20 +1280,27 @@ function buildFloor(f){
   const enemyCandidates=shuffleArr(farCells.length>0?farCells:floorCells.slice());
   const count=enemyCountForFloor(f);
   const es=enemyStatsForFloor(f);
-  const archerChance=f>=3 ? Math.min(0.35, 0.08+f*0.01) : 0;
+  const archerChance=f>=3 ? Math.min(0.30, 0.08+f*0.008) : 0;
+  const bruteChance=f>=5 ? Math.min(0.18, 0.03+f*0.006) : 0;
+  const wraithChance=f>=8 ? Math.min(0.16, 0.02+f*0.005) : 0;
   for(let i=0;i<count;i++){
     const cell=enemyCandidates[i % enemyCandidates.length];
     const jx=(Math.random()-0.5)*1.4, jz=(Math.random()-0.5)*1.4;
-    const isArcher=Math.random()<archerChance;
-    if(isArcher){
-      makeEnemy(cell.c*CELL+CELL/2+jx, cell.r*CELL+CELL/2+jz, Math.max(8,Math.round(es.hp*0.7)), es.speed*0.9, Math.max(4,Math.round(es.dmg*0.75)), theme.cloth, false, true);
+    const roll=Math.random();
+    const px=cell.c*CELL+CELL/2+jx, pz=cell.r*CELL+CELL/2+jz;
+    if(roll<archerChance){
+      makeEnemy(px, pz, Math.max(8,Math.round(es.hp*0.7)), es.speed*0.9, Math.max(4,Math.round(es.dmg*0.75)), theme.cloth, false, true, null);
+    } else if(roll<archerChance+bruteChance){
+      makeEnemy(px, pz, Math.round(es.hp*1.9), es.speed*0.62, Math.round(es.dmg*1.5), theme.cloth, false, false, 'brute');
+    } else if(roll<archerChance+bruteChance+wraithChance){
+      makeEnemy(px, pz, Math.max(6,Math.round(es.hp*0.55)), es.speed*1.55, Math.round(es.dmg*0.85), theme.cloth, false, false, 'wraith');
     } else {
-      makeEnemy(cell.c*CELL+CELL/2+jx, cell.r*CELL+CELL/2+jz, es.hp, es.speed, es.dmg, theme.cloth, false, false);
+      makeEnemy(px, pz, es.hp, es.speed, es.dmg, theme.cloth, false, false, null);
     }
   }
   if(f===30){
     const bossCell=stairsCell;
-    makeEnemy(bossCell.c*CELL+CELL/2, bossCell.r*CELL+CELL/2, 650, 2.1, 34, 0x1a0a24, true, false);
+    makeEnemy(bossCell.c*CELL+CELL/2, bossCell.r*CELL+CELL/2, 650, 2.1, 34, 0x1a0a24, true, false, null);
     setTimeout(()=>{ showToast('O Lorde Sombrio desperta em seu covil...'); playSound('roar'); }, 1200);
   }
 
@@ -1239,9 +1346,9 @@ let weaponGroup=null, attackAnimT=0;
 function buildWeaponViewmodel(){
   if(weaponGroup){ camera.remove(weaponGroup); }
   weaponGroup=new THREE.Group();
-  const defaultId = playerClass==='warrior' ? 'sword_short' : 'staff_apprentice';
+  const defaultId = !stats.ranged ? 'sword_short' : (stats.maxMana>0 ? 'staff_apprentice' : 'bow_short');
   const vis = WEAPON_VISUALS[equippedWeaponId] || WEAPON_VISUALS[defaultId];
-  if(playerClass==='warrior'){
+  if(!stats.ranged){
     const bladeMat=new THREE.MeshStandardMaterial({color:vis.bladeColor, metalness:0.7, roughness:0.3});
     const hiltMat=new THREE.MeshStandardMaterial({color:vis.hiltColor, roughness:0.8});
     const goldMat=new THREE.MeshStandardMaterial({color:0xc79a4b, metalness:0.6, roughness:0.4});
@@ -1254,17 +1361,50 @@ function buildWeaponViewmodel(){
       const guard=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.05,0.05), goldMat); guard.position.y=0.12; weaponGroup.add(guard);
       const handle=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.22,8), hiltMat); handle.position.y=0.0; weaponGroup.add(handle);
     }
-  } else {
+  } else if(stats.maxMana>0){
     const rodMat=new THREE.MeshStandardMaterial({color:0x3a2a18, roughness:0.8});
     const orbMat=new THREE.MeshStandardMaterial({color:vis.orbColor, emissive:vis.emissive, emissiveIntensity:0.8, roughness:0.3});
     const rod=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.03,0.85,8), rodMat); rod.position.y=0.35; weaponGroup.add(rod);
     const orb=new THREE.Mesh(new THREE.SphereGeometry(0.09,12,12), orbMat); orb.position.y=0.78; weaponGroup.add(orb);
     weaponGroup.userData.orb=orb;
     const light=new THREE.PointLight(vis.orbColor, 0.6, 3, 2); light.position.y=0.78; weaponGroup.add(light);
+  } else {
+    const bowMat=new THREE.MeshStandardMaterial({color:vis.bowColor, roughness:0.85});
+    const bow=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.02,6,12,Math.PI*1.55), bowMat);
+    bow.rotation.z=Math.PI/2; bow.rotation.y=0.15; bow.position.set(0.05,0.1,0);
+    weaponGroup.add(bow);
+    const stringMat=new THREE.LineBasicMaterial({color:0xe8dcc0});
+    const stringGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0.05,0.44,0), new THREE.Vector3(-0.02,0.1,0.05), new THREE.Vector3(0.05,-0.24,0)]);
+    const bowString=new THREE.Line(stringGeo, stringMat);
+    weaponGroup.add(bowString);
+    weaponGroup.userData.bowString=bowString;
   }
   weaponGroup.position.set(0.32,-0.32,-0.55);
   weaponGroup.rotation.set(0.15,0.35,0.1);
   camera.add(weaponGroup);
+}
+
+let shieldGroup=null;
+function buildShieldViewmodel(){
+  if(shieldGroup){ camera.remove(shieldGroup); shieldGroup=null; }
+  if(!stats || stats.ranged) return;
+  const shield=SHIELD_CATALOG.find(s=>s.id===equippedShieldId) || SHIELD_CATALOG[0];
+  shieldGroup=new THREE.Group();
+  const tierColors=[0x6b4a28, 0x8a6a3a, 0xaeb4bb, 0xc79a4b];
+  const idx=Math.max(0, SHIELD_CATALOG.findIndex(s=>s.id===shield.id));
+  const faceMat=new THREE.MeshStandardMaterial({color:tierColors[idx]||0x6b4a28, roughness:0.75, metalness:0.25});
+  const rimMat=new THREE.MeshStandardMaterial({color:0xc79a4b, metalness:0.6, roughness:0.4});
+  const face=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.26,0.045,16), faceMat);
+  face.rotation.x=Math.PI/2;
+  shieldGroup.add(face);
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(0.26,0.022,6,16), rimMat);
+  shieldGroup.add(rim);
+  const emblem=new THREE.Mesh(new THREE.CircleGeometry(0.1,12), rimMat);
+  emblem.position.z=0.026;
+  shieldGroup.add(emblem);
+  shieldGroup.position.set(-0.34,-0.28,-0.6);
+  shieldGroup.rotation.set(0.1,-0.3,0);
+  camera.add(shieldGroup);
 }
 
 /* ================= COMBAT ================= */
@@ -1273,7 +1413,7 @@ const raycaster=new THREE.Raycaster();
 function hasValidTarget(){
   if(!stats) return false;
   const forward=new THREE.Vector3(0,0,-1).applyEuler(new THREE.Euler(0,yaw,0));
-  if(playerClass==='warrior'){
+  if(!stats.ranged){
     for(const en of enemies){
       if(!en.alive) continue;
       const dx=en.group.position.x-camera.position.x, dz=en.group.position.z-camera.position.z;
@@ -1303,11 +1443,13 @@ let arrows=[];
 const losRaycaster=new THREE.Raycaster();
 const tracerMatWarrior=new THREE.LineBasicMaterial({color:0xffe0a0, transparent:true});
 const tracerMatMage=new THREE.LineBasicMaterial({color:0x7dc4ff, transparent:true});
+const tracerMatRanger=new THREE.LineBasicMaterial({color:0xd8b878, transparent:true});
 
-function spawnTracer(endPoint, isMagic){
+function spawnTracer(endPoint, kind){
+  const mat = kind==='mage' ? tracerMatMage : (kind==='ranger' ? tracerMatRanger : tracerMatWarrior);
   const start=camera.position.clone().add(new THREE.Vector3(0,-0.05,0));
   const geo=new THREE.BufferGeometry().setFromPoints([start,endPoint]);
-  const line=new THREE.Line(geo, (isMagic?tracerMatMage:tracerMatWarrior).clone());
+  const line=new THREE.Line(geo, mat.clone());
   scene.add(line);
   activeTracers.push({line:line, life:0.09});
 }
@@ -1335,6 +1477,14 @@ function updateSlashEffects(dt){
 
 function rollCrit(){
   return Math.random() < (stats.critChance||0);
+}
+function computeBaseDamage(){
+  let dmg=stats.damage;
+  if(stats.berserker){
+    const missingFrac=Math.max(0, 1-(health/stats.maxHp));
+    dmg *= (1+missingFrac*0.6);
+  }
+  return dmg;
 }
 function damageEnemy(en,dmg,isCrit){
   en.hp-=dmg; en.hitFlash=0.15;
@@ -1404,8 +1554,9 @@ function meleeAttack(){
     if(dist>2.6) continue;
     const toE=new THREE.Vector3(dx,0,dz).normalize();
     if(forward.dot(toE)>0.5){
+      const baseDmg=computeBaseDamage();
       const isCrit=rollCrit();
-      damageEnemy(en, isCrit?stats.damage*2:stats.damage, isCrit);
+      damageEnemy(en, isCrit?baseDmg*2:baseDmg, isCrit);
       hitAny=true; anyCrit=anyCrit||isCrit;
     }
   }
@@ -1423,29 +1574,36 @@ function magicAttack(){
     if(!(obj.userData && obj.userData.type==='wall')){
       const en=enemies.find(e=>e.parts.torso===obj||e.parts.head===obj);
       if(en && en.alive){
+        const baseDmg=computeBaseDamage();
         const isCrit=rollCrit();
-        damageEnemy(en, isCrit?stats.damage*2:stats.damage, isCrit);
+        const dealt=isCrit?baseDmg*2:baseDmg;
+        damageEnemy(en, dealt, isCrit);
         playSound(isCrit?'crit':'hit');
+        if(stats.arcaneSplash){
+          const splash=enemies.find(e2=>e2.alive && e2!==en && Math.hypot(e2.group.position.x-en.group.position.x, e2.group.position.z-en.group.position.z)<3);
+          if(splash){ damageEnemy(splash, Math.round(dealt*0.5), false); }
+        }
       }
     }
   }
-  spawnTracer(endPoint, true);
+  spawnTracer(endPoint, stats.maxMana>0 ? 'mage' : 'ranger');
 }
 function attack(){
   if(attackCooldownTimer>0) return;
+  if(isBlocking) return;
   if(stamina<stats.attackStaminaCost){ showToast('Sem estamina!'); return; }
-  if(playerClass==='warrior'){
+  if(!stats.ranged){
     stamina-=stats.attackStaminaCost;
     attackCooldownTimer=stats.attackCooldown;
     playSound('swing');
     spawnSlashEffect();
     meleeAttack();
   } else {
-    if(mana<stats.manaCost){ showToast('Mana insuficiente!'); return; }
+    if(stats.maxMana>0 && mana<stats.manaCost){ showToast('Mana insuficiente!'); return; }
     stamina-=stats.attackStaminaCost;
-    mana-=stats.manaCost;
+    if(stats.maxMana>0) mana-=stats.manaCost;
     attackCooldownTimer=stats.attackCooldown;
-    playSound('magic');
+    playSound(stats.maxMana>0 ? 'magic' : 'bowshot');
     magicAttack();
   }
   attackAnimT=1;
@@ -1472,7 +1630,7 @@ function openChest(ch){
   } else if(roll<0.70){
     upgradePoints+=1; showToast('Runa de Poder! +1 Ponto de Aprimoramento');
   } else if(roll<0.83){
-    if(playerClass==='mage'){ mana=stats.maxMana; showToast('Cristal de mana restaurado!'); }
+    if(stats.maxMana>0){ mana=stats.maxMana; showToast('Cristal de mana restaurado!'); }
     else { const g=Math.round(200*(stats.goldMul||1)); score+=g; showToast('Baú do tesouro! +'+g+' pontos'); }
   } else {
     openAbilityScreen();
@@ -1520,10 +1678,10 @@ function equipWeapon(weaponId){
   if(!newW) return;
   stats.damage -= oldW.dmgMod;
   stats.attackCooldown = stats.attackCooldown/(oldW.cooldownMod||1);
-  if(playerClass==='mage'){ stats.manaCost -= (oldW.manaCostMod||0); }
+  if(stats.maxMana>0){ stats.manaCost -= (oldW.manaCostMod||0); }
   stats.damage += newW.dmgMod;
   stats.attackCooldown = Math.max(0.12, stats.attackCooldown*(newW.cooldownMod||1));
-  if(playerClass==='mage'){ stats.manaCost = Math.max(4, stats.manaCost+(newW.manaCostMod||0)); }
+  if(stats.maxMana>0){ stats.manaCost = Math.max(4, stats.manaCost+(newW.manaCostMod||0)); }
   equippedWeaponId=weaponId;
   buildWeaponViewmodel();
   updateHUD();
@@ -1546,6 +1704,66 @@ function buyWeapon(weaponId){
   equipWeapon(weaponId);
   playSound('chest');
   showToast('Comprado e equipado: '+w.name);
+  updateHUD();
+  refreshShopUI();
+}
+function equipArmor(armorId){
+  const cat=ARMOR_CATALOG;
+  const oldA=cat.find(a=>a.id===equippedArmorId) || cat[0];
+  const newA=cat.find(a=>a.id===armorId);
+  if(!newA) return;
+  stats.maxHp += (newA.hpMod-oldA.hpMod);
+  stats.moveSpeed += (newA.speedMod-oldA.speedMod);
+  stats.damageReduction = Math.max(0, Math.min(0.75, (stats.damageReduction||0) + (newA.reductionMod-oldA.reductionMod)));
+  health = Math.min(stats.maxHp, health);
+  equippedArmorId = armorId;
+  updateHUD();
+}
+function buyArmor(armorId){
+  const cat=ARMOR_CATALOG;
+  const a=cat.find(x=>x.id===armorId);
+  if(!a) return;
+  if(ownedArmors.includes(armorId)){
+    if(equippedArmorId===armorId) return;
+    equipArmor(armorId);
+    playSound('upgrade');
+    showToast('Equipado: '+a.name);
+    refreshShopUI();
+    return;
+  }
+  if(score<a.price){ showToast('Pontos insuficientes!'); return; }
+  score-=a.price;
+  ownedArmors.push(armorId);
+  equipArmor(armorId);
+  playSound('chest');
+  showToast('Comprado e equipado: '+a.name);
+  updateHUD();
+  refreshShopUI();
+}
+function equipShield(shieldId){
+  const s=SHIELD_CATALOG.find(x=>x.id===shieldId);
+  if(!s) return;
+  equippedShieldId=shieldId;
+  buildShieldViewmodel();
+}
+function buyShield(shieldId){
+  if(stats.ranged) return;
+  const s=SHIELD_CATALOG.find(x=>x.id===shieldId);
+  if(!s) return;
+  if(ownedShields.includes(shieldId)){
+    if(equippedShieldId===shieldId) return;
+    equipShield(shieldId);
+    playSound('upgrade');
+    showToast('Equipado: '+s.name);
+    refreshShopUI();
+    return;
+  }
+  if(score<s.price){ showToast('Pontos insuficientes!'); return; }
+  score-=s.price;
+  ownedShields.push(shieldId);
+  equipShield(shieldId);
+  playSound('chest');
+  showToast('Comprado e equipado: '+s.name);
   updateHUD();
   refreshShopUI();
 }
@@ -1578,6 +1796,20 @@ function refreshShopUI(){
       '<button class="btn small'+(equipped?' disabled':'')+'" data-weapon="'+w.id+'">'+label+'</button>';
     list.appendChild(row);
   });
+  const heading1b=document.createElement('p');
+  heading1b.className='keyHint';
+  heading1b.textContent='Armaduras';
+  list.appendChild(heading1b);
+  ARMOR_CATALOG.forEach(a=>{
+    const owned=ownedArmors.includes(a.id);
+    const equipped=equippedArmorId===a.id;
+    const row=document.createElement('div');
+    row.className='upgradeRow';
+    const label = equipped ? 'Equipado' : (owned ? 'Equipar' : ('Comprar ('+a.price+')'));
+    row.innerHTML = '<div class="upgradeInfo"><strong>'+a.name+'</strong><span>'+a.desc+'</span></div>'+
+      '<button class="btn small'+(equipped?' disabled':'')+'" data-armor="'+a.id+'">'+label+'</button>';
+    list.appendChild(row);
+  });
   const heading2=document.createElement('p');
   heading2.className='keyHint';
   heading2.textContent='Poções';
@@ -1589,8 +1821,30 @@ function refreshShopUI(){
       '<button class="btn small" data-potion="'+p.id+'">Comprar ('+p.price+')</button>';
     list.appendChild(row);
   });
+  if(!stats.ranged){
+    const heading1c=document.createElement('p');
+    heading1c.className='keyHint';
+    heading1c.textContent='Escudos';
+    list.appendChild(heading1c);
+    SHIELD_CATALOG.forEach(s=>{
+      const owned=ownedShields.includes(s.id);
+      const equipped=equippedShieldId===s.id;
+      const row=document.createElement('div');
+      row.className='upgradeRow';
+      const label = equipped ? 'Equipado' : (owned ? 'Equipar' : ('Comprar ('+s.price+')'));
+      row.innerHTML = '<div class="upgradeInfo"><strong>'+s.name+'</strong><span>'+s.desc+'</span></div>'+
+        '<button class="btn small'+(equipped?' disabled':'')+'" data-shield="'+s.id+'">'+label+'</button>';
+      list.appendChild(row);
+    });
+  }
   list.querySelectorAll('[data-weapon]').forEach(btn=>{
     btn.addEventListener('click', ()=>{ buyWeapon(btn.dataset.weapon); });
+  });
+  list.querySelectorAll('[data-armor]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ buyArmor(btn.dataset.armor); });
+  });
+  list.querySelectorAll('[data-shield]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ buyShield(btn.dataset.shield); });
   });
   list.querySelectorAll('[data-potion]').forEach(btn=>{
     btn.addEventListener('click', ()=>{ buyPotion(btn.dataset.potion); });
@@ -1623,6 +1877,10 @@ function refreshInventoryUI(){
   const list=document.getElementById('inventoryList');
   list.innerHTML='';
   const cat=WEAPON_CATALOG[playerClass];
+  const wHeading=document.createElement('p');
+  wHeading.className='keyHint';
+  wHeading.textContent='Armas';
+  list.appendChild(wHeading);
   ownedWeapons.forEach(id=>{
     const w=cat.find(x=>x.id===id);
     if(!w) return;
@@ -1633,6 +1891,36 @@ function refreshInventoryUI(){
       '<button class="btn small'+(equipped?' disabled':'')+'" data-weapon="'+w.id+'">'+(equipped?'Equipado':'Equipar')+'</button>';
     list.appendChild(row);
   });
+  const aHeading=document.createElement('p');
+  aHeading.className='keyHint';
+  aHeading.textContent='Armaduras';
+  list.appendChild(aHeading);
+  ownedArmors.forEach(id=>{
+    const a=ARMOR_CATALOG.find(x=>x.id===id);
+    if(!a) return;
+    const equipped=equippedArmorId===id;
+    const row=document.createElement('div');
+    row.className='upgradeRow';
+    row.innerHTML = '<div class="upgradeInfo"><strong>'+a.name+'</strong><span>'+a.desc+'</span></div>'+
+      '<button class="btn small'+(equipped?' disabled':'')+'" data-armor="'+a.id+'">'+(equipped?'Equipado':'Equipar')+'</button>';
+    list.appendChild(row);
+  });
+  if(!stats.ranged && ownedShields.length>0){
+    const sHeading=document.createElement('p');
+    sHeading.className='keyHint';
+    sHeading.textContent='Escudos';
+    list.appendChild(sHeading);
+    ownedShields.forEach(id=>{
+      const s=SHIELD_CATALOG.find(x=>x.id===id);
+      if(!s) return;
+      const equipped=equippedShieldId===id;
+      const row=document.createElement('div');
+      row.className='upgradeRow';
+      row.innerHTML = '<div class="upgradeInfo"><strong>'+s.name+'</strong><span>'+s.desc+'</span></div>'+
+        '<button class="btn small'+(equipped?' disabled':'')+'" data-shield="'+s.id+'">'+(equipped?'Equipado':'Equipar')+'</button>';
+      list.appendChild(row);
+    });
+  }
   if(ownedAbilities.length>0){
     const heading=document.createElement('p');
     heading.className='keyHint';
@@ -1641,6 +1929,12 @@ function refreshInventoryUI(){
   }
   list.querySelectorAll('[data-weapon]').forEach(btn=>{
     btn.addEventListener('click', ()=>{ equipWeapon(btn.dataset.weapon); refreshInventoryUI(); });
+  });
+  list.querySelectorAll('[data-armor]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ equipArmor(btn.dataset.armor); refreshInventoryUI(); });
+  });
+  list.querySelectorAll('[data-shield]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ equipShield(btn.dataset.shield); refreshInventoryUI(); });
   });
 }
 
@@ -1717,7 +2011,7 @@ function updateHUD(){
   const stam=Math.max(0, Math.round(stamina));
   document.getElementById('staminaBarInner').style.width=(stam/stats.maxStamina*100)+'%';
   document.getElementById('staminaWrap').classList.toggle('depleted', stam<=15);
-  if(playerClass==='mage'){
+  if(stats.maxMana>0){
     document.getElementById('manaWrap').style.display='block';
     const mp=Math.max(0, Math.round(mana));
     document.getElementById('manaBarInner').style.width=(mp/stats.maxMana*100)+'%';
@@ -1973,7 +2267,7 @@ document.querySelectorAll('.classCard[data-class]').forEach(card=>{
     initAudio();
     document.getElementById('chosenClassLabel').textContent = 'você escolheu: '+CLASS_CONFIG[playerClass].name+' · '+DIFFICULTY_CONFIG[difficulty].name;
     classSelectScreen.classList.add('hidden');
-    document.getElementById('up-mana-row').style.display = playerClass==='mage' ? 'flex' : 'none';
+    document.getElementById('up-mana-row').style.display = CLASS_CONFIG[playerClass].maxMana>0 ? 'flex' : 'none';
     startScreen.classList.remove('hidden');
   });
 });
@@ -2008,6 +2302,7 @@ document.addEventListener('pointerlockchange', ()=>{
     gameActive=true;
   } else {
     gameActive=false;
+    isBlocking=false;
     if(gameStarted && !gameOver && !anyOverlayOpen()){
       pauseScreen.classList.remove('hidden');
     }
@@ -2031,6 +2326,8 @@ function refreshUpgradeUI(){
   document.getElementById('up-dmg-val').textContent='Atual: '+Math.round(stats.damage);
   document.getElementById('up-spd-val').textContent='Atual: '+stats.moveSpeed.toFixed(1);
   document.getElementById('up-regen-val').textContent='Atual: '+(stats.regen||0)+' HP/s';
+  document.getElementById('up-stam-val').textContent='Atual: '+Math.round(stats.maxStamina);
+  document.getElementById('up-crit-val').textContent='Atual: '+Math.round((stats.critChance||0)*100)+'%';
   document.getElementById('up-mana-val').textContent='Atual: '+Math.round(stats.maxMana);
   document.querySelectorAll('#upgradeScreen [data-attr]').forEach(btn=>{
     btn.classList.toggle('disabled', upgradePoints<=0);
@@ -2045,6 +2342,8 @@ document.querySelectorAll('#upgradeScreen [data-attr]').forEach(btn=>{
     else if(attr==='dmg'){ stats.damage+=5; }
     else if(attr==='spd'){ stats.moveSpeed+=0.3; }
     else if(attr==='regen'){ stats.regen=(stats.regen||0)+1; }
+    else if(attr==='stam'){ stats.maxStamina+=20; stamina=Math.min(stats.maxStamina, stamina+20); }
+    else if(attr==='crit'){ stats.critChance=Math.min(0.75,(stats.critChance||0)+0.04); }
     else if(attr==='mana'){ stats.maxMana+=20; mana+=20; }
     playSound('upgrade');
     refreshUpgradeUI();
@@ -2056,10 +2355,15 @@ function beginGame(){
   gameOver=false; gameStarted=true;
   score=0; upgradePoints=0; killCount=0; ownedAbilities=[];
   stats=Object.assign({regen:0}, CLASS_CONFIG[playerClass]);
-  health=stats.maxHp; mana=stats.maxMana; stamina=stats.maxStamina; isSprinting=false;
+  health=stats.maxHp; mana=stats.maxMana; stamina=stats.maxStamina; isSprinting=false; isBlocking=false;
   ownedWeapons=[WEAPON_CATALOG[playerClass][0].id];
   equippedWeaponId=WEAPON_CATALOG[playerClass][0].id;
+  ownedArmors=[ARMOR_CATALOG[0].id];
+  equippedArmorId=ARMOR_CATALOG[0].id;
+  ownedShields=stats.ranged ? [] : [SHIELD_CATALOG[0].id];
+  equippedShieldId=stats.ranged ? null : SHIELD_CATALOG[0].id;
   buildWeaponViewmodel();
+  buildShieldViewmodel();
   updateHUD();
   buildFloor(1);
 }
@@ -2077,11 +2381,18 @@ function triggerVictory(){
 }
 
 renderer.domElement.addEventListener('mousedown', e=>{
-  if(e.button!==0) return;
   if(document.pointerLockElement!==renderer.domElement) return;
   if(gameOver) return;
-  attack();
+  if(e.button===0){
+    attack();
+  } else if(e.button===2 && !stats.ranged){
+    isBlocking=true;
+  }
 });
+window.addEventListener('mouseup', e=>{
+  if(e.button===2) isBlocking=false;
+});
+renderer.domElement.addEventListener('contextmenu', e=>{ e.preventDefault(); });
 
 /* ================= MAIN LOOP ================= */
 let footstepTimer=0;
@@ -2096,8 +2407,12 @@ function updatePlayer(dt){
   const len=Math.hypot(mx,mz);
   if(len>0){ mx/=len; mz/=len; }
   const sprintHeld = !!(keys['ShiftLeft']||keys['ShiftRight']);
-  isSprinting = sprintHeld && len>0 && stamina>2;
-  const speed=stats.moveSpeed*(isSprinting?SPRINT_SPEED_MUL:1);
+  isSprinting = sprintHeld && len>0 && stamina>2 && !isBlocking;
+  let speed=stats.moveSpeed*(isSprinting?SPRINT_SPEED_MUL:1);
+  if(isBlocking){
+    const shield=SHIELD_CATALOG.find(s=>s.id===equippedShieldId);
+    if(shield) speed *= Math.max(0.25, 1+shield.speedMod);
+  }
   if(isSprinting){
     stamina=Math.max(0, stamina-SPRINT_DRAIN*(stats.sprintCostMul||1)*dt);
   }
@@ -2140,10 +2455,7 @@ function updateArrows(dt){
     if(a.life<=0 || isWallWorld(a.mesh.position.x, a.mesh.position.z)){ scene.remove(a.mesh); return false; }
     const dx=a.mesh.position.x-camera.position.x, dz=a.mesh.position.z-camera.position.z;
     if(dx*dx+dz*dz < 0.6*0.6 && !gameOver){
-      health -= a.dmg*(1-(stats.damageReduction||0));
-      hitFlashScreen(); playSound('hurt'); shakeIntensity=Math.max(shakeIntensity,0.8);
-      updateHUD();
-      if(health<=0){ health=0; updateHUD(); endGame(); }
+      applyDamageToPlayer(a.dmg, 0.8);
       scene.remove(a.mesh);
       return false;
     }
@@ -2151,11 +2463,23 @@ function updateArrows(dt){
   });
 }
 
-function applyDamageToPlayer(amount){
+function applyDamageToPlayer(amount, shakeAmt){
   if(gameOver) return;
-  health -= amount*(1-(stats.damageReduction||0));
+  if(shakeAmt===undefined) shakeAmt=1;
+  if(stats.dodgeChance && Math.random()<stats.dodgeChance){ showToast('Esquiva!'); return; }
+  let reduction=stats.damageReduction||0;
+  let blocked=false;
+  if(isBlocking && !stats.ranged){
+    const shield=SHIELD_CATALOG.find(s=>s.id===equippedShieldId);
+    if(shield){
+      reduction=1-(1-reduction)*(1-shield.blockReduction);
+      blocked=true;
+    }
+  }
+  health -= amount*(1-reduction);
   hitFlashScreen();
-  playSound('hurt');
+  playSound(blocked?'block':'hurt');
+  shakeIntensity=Math.max(shakeIntensity, blocked?shakeAmt*0.3:shakeAmt);
   updateHUD();
   if(health<=0){ health=0; updateHUD(); endGame(); }
 }
@@ -2191,8 +2515,7 @@ function updateEnemies(dt,t){
           en.attackCd-=dt;
           if(en.attackCd<=0 && !gameOver){
             en.attackCd=1.1;
-            applyDamageToPlayer(en.dmg);
-            shakeIntensity=Math.max(shakeIntensity,1);
+            applyDamageToPlayer(en.dmg, 1);
           }
         }
       } else if(en.chargeState==='telegraph'){
@@ -2210,8 +2533,7 @@ function updateEnemies(dt,t){
         g.rotation.y=Math.atan2(en.chargeDir.x, en.chargeDir.z);
         if(!en.chargeHit && dist<1.6){
           en.chargeHit=true;
-          applyDamageToPlayer(Math.round(en.dmg*1.6));
-          shakeIntensity=Math.max(shakeIntensity,1.4);
+          applyDamageToPlayer(Math.round(en.dmg*1.6), 1.4);
         }
         if(en.chargeTimer<=0){
           en.chargeState='idle'; en.chargeCd=4.5;
@@ -2239,14 +2561,20 @@ function updateEnemies(dt,t){
       }
     } else if(dist>1.3){
       const pos={x:g.position.x, z:g.position.z};
-      tryMoveEntity(pos, (dx/dist)*en.speed*dt, (dz/dist)*en.speed*dt, 0.35);
+      let mdx=dx/dist, mdz=dz/dist;
+      if(en.isWraith){
+        const jitter=Math.sin(t*3.2+en.bobPhase)*0.55;
+        const cosA=Math.cos(jitter), sinA=Math.sin(jitter);
+        const rdx=mdx*cosA - mdz*sinA, rdz=mdx*sinA + mdz*cosA;
+        mdx=rdx; mdz=rdz;
+      }
+      tryMoveEntity(pos, mdx*en.speed*dt, mdz*en.speed*dt, 0.35);
       g.position.x=pos.x; g.position.z=pos.z;
     } else if(!gameOver){
       en.attackCd-=dt;
       if(en.attackCd<=0){
         en.attackCd=1.0;
-        applyDamageToPlayer(en.dmg);
-        shakeIntensity=Math.max(shakeIntensity, 1);
+        applyDamageToPlayer(en.dmg, 1);
       }
     }
     if(en.hitFlash>0){
@@ -2283,7 +2611,7 @@ function updateWeaponAnim(t){
   if(attackAnimT>0){
     attackAnimT=Math.max(0, attackAnimT-0.1);
     const p=1-attackAnimT;
-    if(playerClass==='warrior'){
+    if(!stats.ranged){
       weaponGroup.rotation.z=-0.2+Math.sin(p*Math.PI)*1.4;
       weaponGroup.rotation.x=0.15-Math.sin(p*Math.PI)*0.6;
     } else {
@@ -2296,6 +2624,20 @@ function updateWeaponAnim(t){
     weaponGroup.position.y=-0.32+Math.sin(t*1.6)*0.01;
   }
 }
+function updateShieldAnim(dt){
+  if(!shieldGroup) return;
+  const lerpSpeed=Math.min(1, dt*10);
+  const tx = isBlocking ? 0.08 : -0.34;
+  const ty = isBlocking ? -0.12 : -0.28;
+  const tz = isBlocking ? -0.5 : -0.6;
+  const rx = isBlocking ? 0.05 : 0.1;
+  const ry = isBlocking ? 0 : -0.3;
+  shieldGroup.position.x += (tx-shieldGroup.position.x)*lerpSpeed;
+  shieldGroup.position.y += (ty-shieldGroup.position.y)*lerpSpeed;
+  shieldGroup.position.z += (tz-shieldGroup.position.z)*lerpSpeed;
+  shieldGroup.rotation.x += (rx-shieldGroup.rotation.x)*lerpSpeed;
+  shieldGroup.rotation.y += (ry-shieldGroup.rotation.y)*lerpSpeed;
+}
 
 let shakeIntensity=0;
 const clock=new THREE.Clock();
@@ -2305,10 +2647,11 @@ function animate(){
   const t=clock.getElapsedTime();
 
   if(attackCooldownTimer>0) attackCooldownTimer-=dt;
-  document.getElementById('crosshair').classList.toggle('cooldown', attackCooldownTimer>0);
+  document.getElementById('crosshair').classList.toggle('cooldown', attackCooldownTimer>0 || isBlocking);
   updateTorches(t);
   updateTracers(dt);
   updateWeaponAnim(t);
+  updateShieldAnim(dt);
   updateDamageNumbers(dt);
   updateDyingEnemies(dt);
   updateSlashEffects(dt);
@@ -2319,13 +2662,13 @@ function animate(){
     updateEnemies(dt,t);
     updateArrows(dt);
     updateInteractables(dt);
-    if(playerClass==='mage'){ mana=Math.min(stats.maxMana, mana+stats.manaRegen*dt); }
+    if(stats.maxMana>0){ mana=Math.min(stats.maxMana, mana+stats.manaRegen*dt); }
     if(!isSprinting){ stamina=Math.min(stats.maxStamina, stamina+STAMINA_REGEN*(stats.staminaRegenMul||1)*dt); }
     if(stats.regen && health<stats.maxHp){ health=Math.min(stats.maxHp, health+stats.regen*dt); }
     updateHUD();
     const targetFov = isSprinting ? 82 : 74;
     if(Math.abs(camera.fov-targetFov)>0.05){ camera.fov += (targetFov-camera.fov)*Math.min(1, dt*6); camera.updateProjectionMatrix(); }
-    const canAct = attackCooldownTimer<=0 && stamina>=stats.attackStaminaCost && (playerClass!=='mage' || mana>=stats.manaCost);
+    const canAct = !isBlocking && attackCooldownTimer<=0 && stamina>=stats.attackStaminaCost && (stats.maxMana<=0 || mana>=stats.manaCost);
     document.getElementById('crosshair').classList.toggle('targeting', canAct && hasValidTarget());
   } else if(!gameOver && gameStarted){
     updateEnemies(0,t);
