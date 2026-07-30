@@ -109,6 +109,11 @@
   #floorPlaque .fnum{color:var(--gold-bright);font-size:14px;letter-spacing:3px;text-transform:uppercase;}
   #floorPlaque .fname{display:block;color:#a58a5c;font-size:10.5px;letter-spacing:2px;margin-top:2px;font-family:Georgia,serif;text-transform:none;}
 
+  #bossBarWrap{position:absolute;left:50%;top:64px;transform:translateX(-50%);width:420px;text-align:center;filter:drop-shadow(0 4px 8px rgba(0,0,0,.7));}
+  #bossName{color:#ff8a6a;font-size:16px;letter-spacing:4px;text-transform:uppercase;margin-bottom:5px;text-shadow:0 0 10px rgba(255,60,40,.7),0 2px 3px #000;}
+  #bossBarOuter{width:100%;height:18px;background:#160808;border:2px solid #6b1414;box-shadow:inset 0 0 8px rgba(0,0,0,.9), 0 0 0 1px rgba(255,120,80,.3);position:relative;}
+  #bossBarInner{height:100%;width:100%;background:linear-gradient(180deg,#ff6a4a,#7a1010);transition:width .25s ease-out;}
+
   #minimapWrap{
     position:absolute;left:22px;top:26px;width:172px;height:172px;border-radius:50%;
     background:radial-gradient(circle at 50% 50%, #1c150d 0%, #0a0704 100%);
@@ -323,6 +328,11 @@
   <div id="floorPlaque" class="ornate">
     <div class="fnum">Andar <span id="floorNum">1</span> / 30</div>
     <span class="fname" id="floorName">Masmorra de Pedra</span>
+  </div>
+
+  <div id="bossBarWrap" class="hidden">
+    <div id="bossName">Chefe</div>
+    <div id="bossBarOuter"><div id="bossBarInner"></div></div>
   </div>
 
   <div id="healthWrap">
@@ -554,6 +564,7 @@
   <div class="flourish">❖ ❖ ❖</div>
   <div id="victoryTitle">Masmorra Conquistada</div>
   <div id="victoryStats">Pontos finais: 0 | Andares conquistados: 30</div>
+  <button class="btn" id="ngPlusBtn" style="background:linear-gradient(180deg,#5a1f7a,#2a0e3d);border-color:#b180ff;">Iniciar New Game+</button>
   <button class="btn" id="restartBtn2">Jogar Novamente</button>
 </div>
 
@@ -711,20 +722,30 @@ function startMusic(){
   lfo.start();
   scheduleMelody();
 }
-const MELODY_SCALE = [110,123.47,130.81,146.83,164.81,174.61];
+const DEFAULT_MELODY_SCALE = [110,123.47,130.81,146.83,164.81,174.61];
+let currentMelodyScale = DEFAULT_MELODY_SCALE;
+let melodyTempoMul = 1;
 function scheduleMelody(){
   if(!audioCtx) return;
-  const note = MELODY_SCALE[Math.floor(Math.random()*MELODY_SCALE.length)];
+  const note = currentMelodyScale[Math.floor(Math.random()*currentMelodyScale.length)];
   const t=audioCtx.currentTime;
   const osc=audioCtx.createOscillator(); osc.type='sine';
   const g=audioCtx.createGain();
   osc.frequency.setValueAtTime(note,t);
   g.gain.setValueAtTime(0.0001,t);
-  g.gain.exponentialRampToValueAtTime(0.12,t+0.4);
-  g.gain.exponentialRampToValueAtTime(0.0001,t+2.2);
+  g.gain.exponentialRampToValueAtTime(0.12,t+0.4*melodyTempoMul);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+2.2*melodyTempoMul);
   osc.connect(g); g.connect(musicGain);
-  osc.start(t); osc.stop(t+2.3);
-  musicTimeout = setTimeout(scheduleMelody, 1800+Math.random()*1600);
+  osc.start(t); osc.stop(t+2.3*melodyTempoMul);
+  musicTimeout = setTimeout(scheduleMelody, (1800+Math.random()*1600)*melodyTempoMul);
+}
+function startBossMusic(scale){
+  currentMelodyScale = scale || DEFAULT_MELODY_SCALE;
+  melodyTempoMul = 0.62;
+}
+function stopBossMusic(){
+  currentMelodyScale = DEFAULT_MELODY_SCALE;
+  melodyTempoMul = 1;
 }
 document.getElementById('muteBtn').addEventListener('click', ()=>{
   muted = !muted;
@@ -760,6 +781,7 @@ const DIFFICULTY_CONFIG = {
   hard:{ name:'Difícil', minEnemies:20, statMul:1.25, speedMul:1.15 }
 };
 let difficulty='normal';
+let ngPlusLevel=0;
 
 /* ================= ABILITY POOL (relic cards from chests) ================= */
 const ABILITY_POOL = [
@@ -795,6 +817,59 @@ const ABILITY_POOL = [
 let ownedAbilities=[];
 let pendingAbilityCards=[];
 
+/* ================= RELICS ================= */
+const RELIC_POOL = [
+  { id:'dragon_heart', name:'Coração de Dragão', desc:'Regeneração constante de vida.', icon:'icon-mana',
+    apply:()=>{ stats.regen=(stats.regen||0)+1.5; }, remove:()=>{ stats.regen=(stats.regen||0)-1.5; } },
+  { id:'wind_boots', name:'Botas do Vento', desc:'Aumenta a velocidade de movimento.', icon:'icon-bolt',
+    apply:()=>{ stats.moveSpeed+=0.5; }, remove:()=>{ stats.moveSpeed-=0.5; } },
+  { id:'necro_skull', name:'Crânio do Necromante', desc:'Aumenta o dano de todos os ataques.', icon:'icon-skull',
+    apply:()=>{ stats.damage+=8; }, remove:()=>{ stats.damage-=8; } },
+  { id:'kings_crown', name:'Coroa do Rei', desc:'Aumenta o ouro obtido em baús.', icon:'icon-coin',
+    apply:()=>{ stats.goldMul=(stats.goldMul||1)+0.4; }, remove:()=>{ stats.goldMul=(stats.goldMul||1)-0.4; } },
+  { id:'arcane_hourglass', name:'Ampulheta Arcana', desc:'Desacelera o tempo ao seu redor enquanto você bloqueia.', icon:'icon-mana',
+    apply:()=>{ stats.hourglassCount=(stats.hourglassCount||0)+1; }, remove:()=>{ stats.hourglassCount=Math.max(0,(stats.hourglassCount||0)-1); } },
+  { id:'vampire_ring', name:'Anel Vampírico', desc:'Aumenta o roubo de vida dos seus ataques.', icon:'icon-skull',
+    apply:()=>{ stats.lifesteal=(stats.lifesteal||0)+0.1; }, remove:()=>{ stats.lifesteal=(stats.lifesteal||0)-0.1; } },
+  { id:'fury_totem', name:'Totem da Fúria', desc:'Quanto menor sua vida, maior o dano causado.', icon:'icon-swords',
+    apply:()=>{ stats.berserker=true; }, remove:()=>{ stats.berserker=false; } }
+];
+let ownedRelics=[];
+let equippedRelics=[];
+function equipRelic(instanceId){
+  if(equippedRelics.length>=3) { showToast('Você só pode equipar 3 relíquias!'); return; }
+  const inst=ownedRelics.find(r=>r.instanceId===instanceId);
+  if(!inst || inst.equipped) return;
+  const def=RELIC_POOL.find(r=>r.id===inst.relicId);
+  if(!def) return;
+  def.apply();
+  inst.equipped=true;
+  equippedRelics.push(instanceId);
+  updateHUD();
+}
+function unequipRelic(instanceId){
+  const inst=ownedRelics.find(r=>r.instanceId===instanceId);
+  if(!inst || !inst.equipped) return;
+  const def=RELIC_POOL.find(r=>r.id===inst.relicId);
+  if(!def) return;
+  def.remove();
+  inst.equipped=false;
+  equippedRelics=equippedRelics.filter(id=>id!==instanceId);
+  updateHUD();
+}
+let nextRelicInstanceId=1;
+function grantRelic(relicId){
+  const def=RELIC_POOL[relicId!==undefined ? RELIC_POOL.findIndex(r=>r.id===relicId) : Math.floor(Math.random()*RELIC_POOL.length)] || RELIC_POOL[Math.floor(Math.random()*RELIC_POOL.length)];
+  const instanceId='relic_'+(nextRelicInstanceId++);
+  const inst={ instanceId:instanceId, relicId:def.id, equipped:false };
+  ownedRelics.push(inst);
+  showToast('Relíquia encontrada: '+def.name+'!');
+  playSound('upgrade');
+  if(equippedRelics.length<3){ equipRelic(instanceId); }
+  updateHUD();
+  return inst;
+}
+
 /* ================= WEAPONS / SHOP / INVENTORY ================= */
 const WEAPON_CATALOG = {
   warrior:[
@@ -823,6 +898,80 @@ const WEAPON_CATALOG = {
   ]
 };
 const MERCHANT_FLOORS = [5, 15, 25];
+const ELITE_FLAVORS = {
+  flamejante: { name:'Esqueleto Flamejante', auraColor:0xff6a1a, clothColor:0x8a2a10, forVariant:null },
+  congelado: { name:'Brutamontes Congelado', auraColor:0x6ac8ff, clothColor:0x1a3a4a, forVariant:'brute' },
+  sombrio: { name:'Espectro Sombrio', auraColor:0xa060ff, clothColor:0x2a1040, forVariant:'wraith' },
+  eletrico: { name:'Arqueiro Elétrico', auraColor:0xfff066, clothColor:0x4a4a1a, forVariant:'archer' }
+};
+const BOSS_CONFIG = {
+  10: { name:'Cavaleiro Amaldiçoado', hp:900, dmg:22, cloth:0x2a1010, aura:0xff3b2e, extra:'vampiric', scale:[65.4,73.4,82.4,87.3,98,110] },
+  20: { name:'Golem de Gelo', hp:1450, dmg:27, cloth:0x1a2a3a, aura:0x7dc4ff, extra:'icenova', scale:[49,55,58.3,65.4,73.4,82.4] },
+  30: { name:'Rei Lich', hp:2100, dmg:32, cloth:0x1a0a24, aura:0xb14bff, extra:'summon', scale:[73.4,82.4,87.3,98,110,123.5] }
+};
+let currentBoss=null;
+const FLOOR_EVENTS = [
+  { id:'fog', name:'Névoa Intensa', desc:'A visibilidade despenca neste andar.' },
+  { id:'dark', name:'Escuridão', desc:'As tochas mal iluminam o caminho.' },
+  { id:'curse', name:'Maldição', desc:'Sua proteção está enfraquecida neste andar.' },
+  { id:'blessing', name:'Bênção Divina', desc:'Uma força sagrada cura e fortalece você.' },
+  { id:'goldrush', name:'Dobro de Ouro', desc:'O ouro encontrado aqui é dobrado.' },
+  { id:'invasion', name:'Invasão de Monstros', desc:'Muito mais inimigos espreitam por aqui.' },
+  { id:'firerain', name:'Chuva de Fogo', desc:'Brasas caem do teto periodicamente.' },
+  { id:'traps', name:'Andar Armadilhado', desc:'Armadilhas escondidas cobrem o chão.' }
+];
+let currentFloorEvent=null;
+let floorGoldMul=1;
+let firerainTimer=0;
+const SPECIAL_ROOM_TYPES = [
+  { id:'blacksmith', name:'Ferreiro', color:0xff8a3c, desc:'Melhora sua arma equipada por uma taxa em pontos.' },
+  { id:'library', name:'Biblioteca Arcana', color:0x7dc4ff, desc:'Concede uma relíquia mágica gratuita.' },
+  { id:'altar', name:'Altar do Sacrifício', color:0xff2e4a, desc:'Sacrifique parte da sua vida por uma relíquia.' },
+  { id:'luck', name:'Sala da Sorte', color:0xffd24a, desc:'A sorte decide sua recompensa (ou desafio).' },
+  { id:'treasure', name:'Sala do Tesouro', color:0xf0c877, desc:'Um tesouro reluzente à espera.' },
+  { id:'miniboss', name:'Covil do Mini-Chefe', color:0xb14bff, desc:'Um guardião poderoso protege um prêmio raro.' },
+  { id:'sanctuary', name:'Santuário', color:0x5cf0a0, desc:'Cura totalmente seu corpo.' }
+];
+let specialRoom=null;
+let miniBossEnemy=null;
+let crackedWall=null;
+let traps=[];
+function spawnNamedBoss(f, stairsCell){
+  const cfg=BOSS_CONFIG[f];
+  const dcfg=DIFFICULTY_CONFIG[difficulty];
+  const hpMul=(1+ngPlusLevel*0.6)*dcfg.statMul;
+  const dmgMul=(1+ngPlusLevel*0.4)*dcfg.statMul;
+  const boss=makeEnemy(stairsCell.c*CELL+CELL/2, stairsCell.r*CELL+CELL/2, Math.round(cfg.hp*hpMul), 2.1, Math.round(cfg.dmg*dmgMul), cfg.cloth, true, false, null, null, cfg.aura);
+  boss.bossName=cfg.name;
+  boss.bossExtra=cfg.extra;
+  boss.bossFloorNum=f;
+  boss.iceNovaCd=5.5;
+  boss.summonCd=8.5;
+  currentBoss=boss;
+  showBossBar(cfg.name);
+  setTimeout(()=>{ showToast(cfg.name+' desperta em seu covil...'); playSound('roar'); }, 1200);
+  startBossMusic(cfg.scale);
+}
+function showBossBar(name){
+  document.getElementById('bossName').textContent=name;
+  document.getElementById('bossBarWrap').classList.remove('hidden');
+}
+function hideBossBar(){
+  document.getElementById('bossBarWrap').classList.add('hidden');
+}
+function onBossDefeated(en){
+  hideBossBar();
+  stopBossMusic();
+  currentBoss=null;
+  if(en.bossFloorNum===30){
+    triggerVictory();
+  } else {
+    upgradePoints+=3;
+    grantRelic();
+    grantGeneratedItem(['weapon','armor','shield'][Math.floor(Math.random()*3)], 1);
+    showToast(en.bossName+' derrotado! Recompensas concedidas.');
+  }
+}
 const ARMOR_CATALOG = [
   { id:'armor_leather', name:'Couro Batido', price:0, hpMod:0, speedMod:0, reductionMod:0, desc:'Proteção inicial, sem bônus nem penalidades.' },
   { id:'armor_chain', name:'Cota de Malha', price:280, hpMod:30, speedMod:-0.3, reductionMod:0.05, desc:'Mais vida e proteção, porém mais pesada.' },
@@ -837,9 +986,110 @@ const SHIELD_CATALOG = [
   { id:'shield_iron', name:'Escudo de Ferro', price:400, blockReduction:0.68, speedMod:-0.4, desc:'Reforçado com placas de ferro, bloqueia boa parte do dano.' },
   { id:'shield_tower', name:'Escudo Torre', price:580, blockReduction:0.85, speedMod:-0.55, desc:'Proteção quase total, porém pesado — reduz bastante sua velocidade ao bloquear.' }
 ];
+const ARMOR_CATALOG_BASE = ARMOR_CATALOG.map(a=>Object.assign({},a));
+const SHIELD_CATALOG_BASE = SHIELD_CATALOG.map(s=>Object.assign({},s));
 let ownedShields=[];
 let equippedShieldId=null;
 let isBlocking=false;
+let playerFreezeTime=0;
+let playerStunTime=0;
+let playerBurnTime=0, playerBurnTickTimer=0, playerBurnDmg=0;
+
+/* ================= RARITY & GENERATED EQUIPMENT ================= */
+const RARITY_TIERS = [
+  { id:'common', name:'Comum', color:0xc9c9c9, mult:1.0, statCount:0 },
+  { id:'uncommon', name:'Incomum', color:0x5cd16a, mult:1.4, statCount:1 },
+  { id:'rare', name:'Raro', color:0x5cb3ff, mult:1.9, statCount:2 },
+  { id:'epic', name:'Épico', color:0xb180ff, mult:2.5, statCount:3 },
+  { id:'legendary', name:'Lendário', color:0xffb340, mult:3.3, statCount:4 },
+  { id:'mythic', name:'Mítico', color:0xff4fa0, mult:4.5, statCount:5, ngPlusOnly:true }
+];
+function rarityPool(){
+  return ngPlusLevel>0 ? RARITY_TIERS : RARITY_TIERS.filter(r=>!r.ngPlusOnly);
+}
+function rollRarity(bonus){
+  // weighted roll, higher tiers rarer; `bonus` (0-1) shifts odds toward better tiers
+  const pool=rarityPool();
+  const weights=pool.map((r,i)=>Math.max(1, (pool.length-i)*(pool.length-i)) * (1+bonus*i*0.6));
+  const total=weights.reduce((a,b)=>a+b,0);
+  let roll=Math.random()*total;
+  for(let i=0;i<pool.length;i++){
+    roll-=weights[i];
+    if(roll<=0) return pool[i];
+  }
+  return pool[pool.length-1];
+}
+const AFFIX_POOL = [
+  { id:'dmg', label:'Dano Adicional', roll:(m)=>Math.round((3+Math.random()*5)*m), fmt:(v)=>'+'+v+' Dano' },
+  { id:'hp', label:'Vida Máxima', roll:(m)=>Math.round((8+Math.random()*12)*m), fmt:(v)=>'+'+v+' Vida' },
+  { id:'crit', label:'Chance de Crítico', roll:(m)=>+((0.02+Math.random()*0.03)*m).toFixed(3), fmt:(v)=>'+'+Math.round(v*100)+'% Crítico' },
+  { id:'atkspd', label:'Velocidade de Ataque', roll:(m)=>+((0.03+Math.random()*0.05)*m).toFixed(3), fmt:(v)=>'+'+Math.round(v*100)+'% Vel. Ataque' },
+  { id:'regen', label:'Regeneração de Vida', roll:(m)=>+((0.3+Math.random()*0.5)*m).toFixed(2), fmt:(v)=>'+'+v+' Regen/s' },
+  { id:'manaregen', label:'Regeneração de Mana', roll:(m)=>Math.round((2+Math.random()*3)*m), fmt:(v)=>'+'+v+' Mana/s' },
+  { id:'lifesteal', label:'Roubo de Vida', roll:(m)=>+((0.02+Math.random()*0.04)*m).toFixed(3), fmt:(v)=>'+'+Math.round(v*100)+'% Roubo de Vida' },
+  { id:'ignite', label:'Chance de Incendiar', roll:(m)=>+((0.05+Math.random()*0.08)*m).toFixed(3), fmt:(v)=>'+'+Math.round(v*100)+'% Incendiar' },
+  { id:'freeze', label:'Chance de Congelar', roll:(m)=>+((0.05+Math.random()*0.08)*m).toFixed(3), fmt:(v)=>'+'+Math.round(v*100)+'% Congelar' },
+  { id:'stun', label:'Chance de Atordoar', roll:(m)=>+((0.04+Math.random()*0.06)*m).toFixed(3), fmt:(v)=>'+'+Math.round(v*100)+'% Atordoar' }
+];
+const GENERATED_ITEM_BASE_NAMES = {
+  weapon:['Lâmina', 'Espada', 'Machado', 'Cajado', 'Arco'],
+  armor:['Armadura', 'Manto', 'Cota'],
+  shield:['Escudo', 'Broquel', 'Égide']
+};
+let nextGeneratedItemId=1;
+function generateItem(slot, bonus){
+  const rarity=rollRarity(bonus||0);
+  const pool=AFFIX_POOL.slice();
+  shuffleArr(pool);
+  const picked=pool.slice(0, rarity.statCount);
+  const affixes=picked.map(a=>({ id:a.id, value:a.roll(rarity.mult), label:a.fmt }));
+  const baseName=GENERATED_ITEM_BASE_NAMES[slot][Math.floor(Math.random()*GENERATED_ITEM_BASE_NAMES[slot].length)];
+  const id='gen_'+(nextGeneratedItemId++);
+  const item={ id:id, slot:slot, name:rarity.name+' '+baseName, rarity:rarity, affixes:affixes,
+    dmgMod:0, cooldownMod:1, manaCostMod:0, hpMod:0, speedMod:0, reductionMod:0, blockReduction:slot==='shield'?0.3:0 };
+  affixes.forEach(a=>{
+    if(a.id==='dmg') item.dmgMod += a.value;
+    else if(a.id==='atkspd') item.cooldownMod *= (1-a.value);
+    else if(a.id==='hp') item.hpMod += a.value;
+  });
+  return item;
+}
+function applyGeneratedItemPassives(item, sign){
+  // affixes that aren't representable as weapon/armor deltas apply as permanent stat bonuses (sign=+1 gain, -1 removed - generated items are never unequipped, only replaced by better ones, so sign is always +1 in practice)
+  item.affixes.forEach(a=>{
+    if(a.id==='crit') stats.critChance=Math.min(0.9,(stats.critChance||0)+sign*a.value);
+    else if(a.id==='regen') stats.regen=(stats.regen||0)+sign*a.value;
+    else if(a.id==='manaregen') stats.manaRegen=(stats.manaRegen||0)+sign*a.value;
+    else if(a.id==='lifesteal') stats.lifesteal=(stats.lifesteal||0)+sign*a.value;
+    else if(a.id==='ignite') stats.igniteChance=(stats.igniteChance||0)+sign*a.value;
+    else if(a.id==='freeze') stats.freezeChance=(stats.freezeChance||0)+sign*a.value;
+    else if(a.id==='stun') stats.stunChance=(stats.stunChance||0)+sign*a.value;
+  });
+}
+function grantGeneratedItem(slot, bonus){
+  if(slot==='shield' && stats.ranged) slot='weapon';
+  const item=generateItem(slot, bonus);
+  if(slot==='weapon'){
+    WEAPON_CATALOG[playerClass].push({ id:item.id, name:item.name, price:0, dmgMod:item.dmgMod, cooldownMod:item.cooldownMod, manaCostMod:0, desc:'Item gerado ('+item.rarity.name+').', rarity:item.rarity });
+    WEAPON_VISUALS[item.id] = stats.ranged ? (stats.maxMana>0?{orbColor:item.rarity.color, emissive:item.rarity.color}:{bowColor:item.rarity.color}) : { bladeLen:0.8, bladeColor:item.rarity.color, hiltColor:0x241a10, axe:false };
+    ownedWeapons.push(item.id);
+    equipWeapon(item.id);
+  } else if(slot==='armor'){
+    ARMOR_CATALOG.push({ id:item.id, name:item.name, price:0, hpMod:item.hpMod, speedMod:0, reductionMod:0, desc:'Item gerado ('+item.rarity.name+').', rarity:item.rarity });
+    ownedArmors.push(item.id);
+    equipArmor(item.id);
+  } else {
+    SHIELD_CATALOG.push({ id:item.id, name:item.name, price:0, blockReduction:item.blockReduction, speedMod:-0.25, desc:'Item gerado ('+item.rarity.name+').', rarity:item.rarity });
+    ownedShields.push(item.id);
+    equipShield(item.id);
+  }
+  applyGeneratedItemPassives(item, 1);
+  updateHUD();
+  showToast(item.rarity.name+': '+item.name+' obtido e equipado!');
+  playSound('upgrade');
+  return item;
+}
+
 const POTION_CATALOG = [
   { id:'potion_health', name:'Poção de Vida Maior', price:120, effect:'heal', amount:60, desc:'Restaura 60 pontos de vida instantaneamente.' },
   { id:'potion_stamina', name:'Elixir de Vigor', price:90, effect:'stamina', desc:'Restaura toda a sua estamina.' },
@@ -868,6 +1118,8 @@ let ownedWeapons=[];
 let equippedWeaponId=null;
 let merchant=null;
 let currentNearMerchant=false;
+let currentNearSpecialRoom=false;
+let currentNearCrackedWall=false;
 
 /* ================= THEMES ================= */
 const THEMES = [
@@ -988,6 +1240,12 @@ function shadeColor(hex, factor){
   const r=(hex>>16&255)*factor, g=(hex>>8&255)*factor, b=(hex&255)*factor;
   return 'rgb('+(r|0)+','+(g|0)+','+(b|0)+')';
 }
+function shadeBossEnrageColor(hex){
+  const r=Math.min(255,(hex>>16&255)+80);
+  const g=Math.max(0,(hex>>8&255)-40);
+  const b=Math.min(255,(hex&255)+40);
+  return (r<<16)|(g<<8)|b;
+}
 function makeStoneTexture(base, mortar, size, cellPx){
   const cnv=document.createElement('canvas'); cnv.width=cnv.height=size;
   const ctx=cnv.getContext('2d');
@@ -1040,6 +1298,13 @@ function clearFloor(){
   dyingEnemies.forEach(d=>scene.remove(d.group)); dyingEnemies=[];
   damageNumbers.forEach(d=>{ scene.remove(d.sprite); d.tex.dispose(); d.sprite.material.dispose(); }); damageNumbers=[];
   arrows.forEach(a=>scene.remove(a.mesh)); arrows=[];
+  if(currentBoss){ currentBoss=null; hideBossBar(); stopBossMusic(); }
+  if(specialRoom){ scene.remove(specialRoom.group); specialRoom=null; }
+  if(crackedWall){ scene.remove(crackedWall.mesh); crackedWall.tex.dispose(); crackedWall.mesh.material.dispose(); crackedWall=null; }
+  miniBossEnemy=null;
+  currentFloorEvent=null;
+  floorGoldMul=1;
+  firerainTimer=0;
 }
 
 function makeTorch(x,z,color,angle){
@@ -1119,12 +1384,57 @@ function makeMerchant(x,z){
   merchant={group:grp, x:x, z:z, bobPhase:Math.random()*10};
 }
 
+function makeSpecialRoomShrine(x,z,typeDef){
+  const grp=new THREE.Group();
+  const pedestalMat=new THREE.MeshStandardMaterial({color:0x4a4032, roughness:0.85});
+  const pedestal=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.4,0.55,10), pedestalMat);
+  pedestal.position.y=0.28; grp.add(pedestal);
+  const orbMat=new THREE.MeshBasicMaterial({color:typeDef.color});
+  const orb=new THREE.Mesh(new THREE.SphereGeometry(0.16,14,14), orbMat);
+  orb.position.y=0.95; grp.add(orb);
+  const light=new THREE.PointLight(typeDef.color, 1.4, 6, 2);
+  light.position.y=0.95; grp.add(light);
+  const ring=new THREE.Mesh(new THREE.TorusGeometry(0.34,0.02,6,20), new THREE.MeshStandardMaterial({color:typeDef.color, metalness:0.5, roughness:0.4}));
+  ring.rotation.x=Math.PI/2; ring.position.y=0.56; grp.add(ring);
+  grp.position.set(x,0,z);
+  scene.add(grp);
+  specialRoom={ group:grp, orb:orb, x:x, z:z, type:typeDef, bobPhase:Math.random()*10, used:false };
+}
+
+function makeCrackedWallDecal(wallCell, dr, dc){
+  const cnv=document.createElement('canvas'); cnv.width=cnv.height=128;
+  const ctx=cnv.getContext('2d');
+  ctx.clearRect(0,0,128,128);
+  ctx.strokeStyle='rgba(10,8,5,0.85)';
+  ctx.lineWidth=2.5;
+  function crackLine(x,y){
+    ctx.beginPath(); ctx.moveTo(x,y);
+    let cx=x, cy=y;
+    for(let i=0;i<5;i++){
+      cx += (Math.random()-0.5)*30;
+      cy += 14+Math.random()*10;
+      ctx.lineTo(cx,cy);
+    }
+    ctx.stroke();
+  }
+  crackLine(50,10); crackLine(80,20); crackLine(64,0);
+  const tex=new THREE.CanvasTexture(cnv);
+  const mat=new THREE.MeshBasicMaterial({map:tex, transparent:true, opacity:0.9});
+  const plane=new THREE.Mesh(new THREE.PlaneGeometry(CELL*0.85, WALL_H*0.85), mat);
+  const wx=wallCell.c*CELL+CELL/2, wz=wallCell.r*CELL+CELL/2;
+  plane.position.set(wx+dc*(CELL/2-0.02), WALL_H/2, wz+dr*(CELL/2-0.02));
+  plane.rotation.y=Math.atan2(dc,dr)+Math.PI;
+  scene.add(plane);
+  crackedWall={ mesh:plane, tex:tex, cellR:wallCell.r, cellC:wallCell.c, x:wx, z:wz, opened:false };
+}
+
 const boneMat = new THREE.MeshStandardMaterial({color:0xcfc7a8, roughness:0.8});
 const eyeMat = new THREE.MeshBasicMaterial({color:0xff2020});
-function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss,isArcher,variant){
+function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss,isArcher,variant,eliteFlavor,bossAuraColor){
   const isWraith = variant==='wraith';
   const isBrute = variant==='brute';
-  const finalCloth = isArcher ? 0x33465a : (isBrute ? 0x2a1414 : clothColor);
+  const eliteDef = eliteFlavor ? ELITE_FLAVORS[eliteFlavor] : null;
+  const finalCloth = eliteDef ? eliteDef.clothColor : (isArcher ? 0x33465a : (isBrute ? 0x2a1414 : clothColor));
   const clothMat=new THREE.MeshStandardMaterial({color: finalCloth, roughness:1, transparent: isWraith, opacity: isWraith?0.6:1});
   const baseColor= finalCloth;
   const grp=new THREE.Group();
@@ -1164,7 +1474,7 @@ function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss,isArcher,variant){
   grp.add(healthBarBg); grp.add(healthBarFg);
   if(isBoss){
     grp.scale.set(1.9,1.9,1.9);
-    const aura=new THREE.PointLight(0xb14bff, 1.4, 6, 2);
+    const aura=new THREE.PointLight(bossAuraColor||0xb14bff, 1.4, 6, 2);
     aura.position.set(0,1.2,0);
     grp.add(aura);
   } else if(isBrute){
@@ -1172,11 +1482,18 @@ function makeEnemy(x,z,hp,speed,dmg,clothColor,isBoss,isArcher,variant){
   } else if(isWraith){
     grp.scale.set(0.82,0.95,0.82);
   }
+  if(eliteDef){
+    grp.scale.multiplyScalar(1.15);
+    const eliteAura=new THREE.PointLight(eliteDef.auraColor, 1.1, 4.5, 2);
+    eliteAura.position.set(0,1.1,0);
+    grp.add(eliteAura);
+  }
   grp.position.set(x,0,z);
   scene.add(grp);
   const enemy={group:grp, hp:hp, maxHp:hp, speed:speed, dmg:dmg, alive:true, attackCd:0, hitFlash:0, baseColor:baseColor, bobPhase:Math.random()*10, isBoss:!!isBoss, isArcher:!!isArcher, isWraith:isWraith, isBrute:isBrute,
     parts:{torso:torso,head:head}, healthBarFg:healthBarFg, healthBarBg:healthBarBg, barW:barW,
-    enraged:false, chargeState:'idle', chargeCd:3, chargeTimer:0, chargeHit:false, chargeDir:null, baseSpeed:speed, baseDmg:dmg};
+    enraged:false, chargeState:'idle', chargeCd:3, chargeTimer:0, chargeHit:false, chargeDir:null, baseSpeed:speed, baseDmg:dmg,
+    burnTime:0, burnTickTimer:0, burnDmg:0, freezeTime:0, stunTime:0, isElite:!!eliteDef, eliteFlavor:eliteFlavor||null, blinkCd:2};
   enemies.push(enemy);
   return enemy;
 }
@@ -1211,6 +1528,10 @@ function buildFloor(f){
   let stairsCell={r:1,c:1}, maxD=-1;
   for(const cell of floorCells){ const d=dist[cell.r][cell.c]; if(d>maxD){ maxD=d; stairsCell=cell; } }
 
+  currentFloorEvent = Math.random()<0.30 ? FLOOR_EVENTS[Math.floor(Math.random()*FLOOR_EVENTS.length)].id : null;
+  floorGoldMul = currentFloorEvent==='goldrush' ? 2 : 1;
+  firerainTimer = currentFloorEvent==='firerain' ? 6 : 0;
+
   const wallTex=makeStoneTexture(theme.wallBase, theme.wallMortar, 256, 42);
   wallMat=new THREE.MeshStandardMaterial({map:wallTex, roughness:0.95, metalness:0.02});
   const floorTex=makeStoneTexture(theme.floorBase, theme.floorMortar, 256, 34);
@@ -1236,9 +1557,13 @@ function buildFloor(f){
   ceilingMesh=new THREE.Mesh(new THREE.PlaneGeometry(mazeW,mazeD), ceilMat);
   ceilingMesh.rotation.x=Math.PI/2; ceilingMesh.position.set(mazeW/2,WALL_H,mazeD/2); scene.add(ceilingMesh);
 
-  scene.fog=new THREE.FogExp2(theme.fog, theme.fogDensity*1.18);
+  let fogMul=1.18;
+  if(currentFloorEvent==='fog') fogMul*=1.9;
+  if(currentFloorEvent==='dark') fogMul*=1.3;
+  scene.fog=new THREE.FogExp2(theme.fog, theme.fogDensity*fogMul);
   ambientLight.color.setHex(theme.ambient);
   hemiLight.color.setHex(theme.ambient);
+  ambientLight.intensity = currentFloorEvent==='dark' ? 0.5 : 0.9;
 
   // ceiling support beams, spaced across the grid, for a low, closed-in feel
   const beamMat=new THREE.MeshStandardMaterial({color:0x1c140c, roughness:0.95});
@@ -1267,7 +1592,8 @@ function buildFloor(f){
     }
   }
   shuffleArr(torchCandidates);
-  const torchCount=Math.max(6, Math.floor(floorCells.length/13));
+  let torchCount=Math.min(15, Math.max(10, Math.floor(floorCells.length/13)));
+  if(currentFloorEvent==='dark') torchCount=Math.max(6, Math.round(torchCount*0.5));
   for(let i=0;i<Math.min(torchCount, torchCandidates.length);i++){
     const t=torchCandidates[i];
     const wx=t.wallCell.c*CELL+CELL/2, wz=t.wallCell.r*CELL+CELL/2;
@@ -1278,30 +1604,41 @@ function buildFloor(f){
 
   const farCells=floorCells.filter(c=>{ const d=dist[c.r][c.c]; return d>=4 && !(c.r===stairsCell.r&&c.c===stairsCell.c); });
   const enemyCandidates=shuffleArr(farCells.length>0?farCells:floorCells.slice());
-  const count=enemyCountForFloor(f);
+  let count=enemyCountForFloor(f);
+  if(currentFloorEvent==='invasion') count=Math.round(count*1.5);
   const es=enemyStatsForFloor(f);
   const archerChance=f>=3 ? Math.min(0.30, 0.08+f*0.008) : 0;
   const bruteChance=f>=5 ? Math.min(0.18, 0.03+f*0.006) : 0;
   const wraithChance=f>=8 ? Math.min(0.16, 0.02+f*0.005) : 0;
+  const eliteChance=f>=4 ? Math.min(0.20, 0.06+f*0.004) : 0;
+  const ngHpMul=1+ngPlusLevel*0.5, ngDmgMul=1+ngPlusLevel*0.35;
   for(let i=0;i<count;i++){
     const cell=enemyCandidates[i % enemyCandidates.length];
     const jx=(Math.random()-0.5)*1.4, jz=(Math.random()-0.5)*1.4;
     const roll=Math.random();
     const px=cell.c*CELL+CELL/2+jx, pz=cell.r*CELL+CELL/2+jz;
+    const makeElite=Math.random()<eliteChance;
+    let baseType, baseHp, baseSpd, baseDmg;
     if(roll<archerChance){
-      makeEnemy(px, pz, Math.max(8,Math.round(es.hp*0.7)), es.speed*0.9, Math.max(4,Math.round(es.dmg*0.75)), theme.cloth, false, true, null);
+      baseType='archer'; baseHp=Math.max(8,Math.round(es.hp*0.7)); baseSpd=es.speed*0.9; baseDmg=Math.max(4,Math.round(es.dmg*0.75));
     } else if(roll<archerChance+bruteChance){
-      makeEnemy(px, pz, Math.round(es.hp*1.9), es.speed*0.62, Math.round(es.dmg*1.5), theme.cloth, false, false, 'brute');
+      baseType='brute'; baseHp=Math.round(es.hp*1.9); baseSpd=es.speed*0.62; baseDmg=Math.round(es.dmg*1.5);
     } else if(roll<archerChance+bruteChance+wraithChance){
-      makeEnemy(px, pz, Math.max(6,Math.round(es.hp*0.55)), es.speed*1.55, Math.round(es.dmg*0.85), theme.cloth, false, false, 'wraith');
+      baseType='wraith'; baseHp=Math.max(6,Math.round(es.hp*0.55)); baseSpd=es.speed*1.55; baseDmg=Math.round(es.dmg*0.85);
     } else {
-      makeEnemy(px, pz, es.hp, es.speed, es.dmg, theme.cloth, false, false, null);
+      baseType='melee'; baseHp=es.hp; baseSpd=es.speed; baseDmg=es.dmg;
     }
+    let flavor=null;
+    if(makeElite){
+      flavor = Object.keys(ELITE_FLAVORS).find(k=>ELITE_FLAVORS[k].forVariant===(baseType==='melee'?null:baseType)) || 'flamejante';
+      baseHp=Math.round(baseHp*1.8); baseDmg=Math.round(baseDmg*1.4);
+    }
+    baseHp=Math.round(baseHp*ngHpMul); baseDmg=Math.round(baseDmg*ngDmgMul);
+    const variant = baseType==='brute'?'brute':(baseType==='wraith'?'wraith':null);
+    makeEnemy(px, pz, baseHp, baseSpd, baseDmg, theme.cloth, false, baseType==='archer', variant, flavor);
   }
-  if(f===30){
-    const bossCell=stairsCell;
-    makeEnemy(bossCell.c*CELL+CELL/2, bossCell.r*CELL+CELL/2, 650, 2.1, 34, 0x1a0a24, true, false, null);
-    setTimeout(()=>{ showToast('O Lorde Sombrio desperta em seu covil...'); playSound('roar'); }, 1200);
+  if(BOSS_CONFIG[f]){
+    spawnNamedBoss(f, stairsCell);
   }
 
   const usedCells=[{r:1,c:1},stairsCell];
@@ -1324,6 +1661,46 @@ function buildFloor(f){
   for(let i=0;i<Math.min(chestCount, chestCandidates.length);i++){
     const cell=chestCandidates[i];
     makeChest(cell.c*CELL+CELL/2, cell.r*CELL+CELL/2, i===keyChestIndex);
+    usedCells.push(cell);
+  }
+
+  if(Math.random()<0.45){
+    const roomCandidates=shuffleArr(floorCells.filter(c=>!usedCells.some(u=>u.r===c.r&&u.c===c.c)));
+    if(roomCandidates.length>0){
+      const rc=roomCandidates[0];
+      const availableTypes = f>=4 ? SPECIAL_ROOM_TYPES : SPECIAL_ROOM_TYPES.filter(t=>t.id!=='miniboss');
+      const typeDef=availableTypes[Math.floor(Math.random()*availableTypes.length)];
+      makeSpecialRoomShrine(rc.c*CELL+CELL/2, rc.r*CELL+CELL/2, typeDef);
+      usedCells.push(rc);
+    }
+  }
+
+  if(Math.random()<0.40){
+    const crackCandidates=[];
+    for(const cell of floorCells){
+      if(usedCells.some(u=>u.r===cell.r&&u.c===cell.c)) continue;
+      const dirs=[[0,-1],[0,1],[-1,0],[1,0]];
+      for(const d of dirs){
+        const nr=cell.r+d[0], nc=cell.c+d[1];
+        if(nr>=0&&nr<size&&nc>=0&&nc<size&&currentGrid[nr][nc]==='#'){
+          crackCandidates.push({wallCell:{r:nr,c:nc}, dr:cell.r-nr, dc:cell.c-nc});
+        }
+      }
+    }
+    if(crackCandidates.length>0){
+      const cc=crackCandidates[Math.floor(Math.random()*crackCandidates.length)];
+      makeCrackedWallDecal(cc.wallCell, cc.dr, cc.dc);
+    }
+  }
+
+  traps=[];
+  if(currentFloorEvent==='traps'){
+    const trapCandidates=shuffleArr(floorCells.filter(c=>!usedCells.some(u=>u.r===c.r&&u.c===c.c)));
+    const trapCount=Math.min(4, trapCandidates.length);
+    for(let i=0;i<trapCount;i++){
+      const cell=trapCandidates[i];
+      traps.push({ x:cell.c*CELL+CELL/2, z:cell.r*CELL+CELL/2, triggered:false });
+    }
   }
 
   if(f<30){
@@ -1335,9 +1712,17 @@ function buildFloor(f){
   visited=new Set();
   scene.updateMatrixWorld(true);
 
+  if(currentFloorEvent==='blessing'){
+    health=stats.maxHp; if(stats.maxMana>0) mana=stats.maxMana; stamina=stats.maxStamina;
+  }
+
   document.getElementById('floorNum').textContent=floor;
-  document.getElementById('floorName').textContent=theme.name;
+  document.getElementById('floorName').textContent=theme.name+(ngPlusLevel>0?' · NG+'+ngPlusLevel:'');
   showWaveBanner('Andar '+floor, theme.name);
+  if(currentFloorEvent){
+    const evDef=FLOOR_EVENTS.find(e=>e.id===currentFloorEvent);
+    if(evDef) setTimeout(()=>showToast('Evento: '+evDef.name+' — '+evDef.desc), 2300);
+  }
   updateHUD();
 }
 
@@ -1491,16 +1876,27 @@ function damageEnemy(en,dmg,isCrit){
   spawnDamageNumber(en.group.position, dmg, isCrit);
   if(isCrit){ shakeIntensity=Math.max(shakeIntensity, 0.6); }
   if(stats.lifesteal){ health=Math.min(stats.maxHp, health+dmg*stats.lifesteal); }
+  if(stats.igniteChance && Math.random()<stats.igniteChance){ en.burnTime=3; en.burnTickTimer=0.5; en.burnDmg=Math.max(1,Math.round(dmg*0.15)); }
+  if(stats.freezeChance && Math.random()<stats.freezeChance){ en.freezeTime=2.5; }
+  if(stats.stunChance && Math.random()<stats.stunChance){ en.stunTime=1.2; }
   if(en.hp<=0 && en.alive){
     en.alive=false;
     killCount++;
     if(killCount%4===0){ upgradePoints++; showToast('+1 Ponto de Aprimoramento'); }
-    score += Math.round((en.isBoss?1000:100)*(stats.scoreMul||1));
+    score += Math.round((en.isBoss?1000:en.isElite?250:en.isMiniBoss?400:100)*(stats.scoreMul||1));
     if(en.healthBarBg){ en.healthBarBg.visible=false; en.healthBarFg.visible=false; }
     dyingEnemies.push({group:en.group, t:0, baseScale:en.group.scale.x||1});
     playSound('enemyDeath');
+    if(en.isElite){ grantGeneratedItem(['weapon','armor','shield'][Math.floor(Math.random()*3)], 0.5); }
+    if(en.isMiniBoss){
+      showToast('Guardião derrotado! O prêmio é seu.');
+      grantGeneratedItem(['weapon','armor','shield'][Math.floor(Math.random()*3)], 1.2);
+      grantRelic();
+      if(specialRoom){ specialRoom.used=true; hideShrine(); }
+      miniBossEnemy=null;
+    }
+    if(en.isBoss){ setTimeout(()=>onBossDefeated(en), 1400); }
     updateHUD();
-    if(en.isBoss){ setTimeout(triggerVictory, 1400); }
   }
 }
 
@@ -1591,6 +1987,7 @@ function magicAttack(){
 function attack(){
   if(attackCooldownTimer>0) return;
   if(isBlocking) return;
+  if(playerStunTime>0) return;
   if(stamina<stats.attackStaminaCost){ showToast('Sem estamina!'); return; }
   if(!stats.ranged){
     stamina-=stats.attackStaminaCost;
@@ -1611,6 +2008,80 @@ function attack(){
 }
 
 /* ================= INTERACTIONS ================= */
+function hideShrine(){
+  if(specialRoom){ specialRoom.group.visible=false; }
+}
+function interactSpecialRoom(){
+  if(!specialRoom || specialRoom.used) return;
+  const type=specialRoom.type.id;
+  if(type==='blacksmith'){
+    const cost=150+floor*10;
+    if(score<cost){ showToast('Pontos insuficientes para o Ferreiro ('+cost+').'); return; }
+    score-=cost; stats.damage+=6; updateHUD();
+    showToast('O Ferreiro aprimora sua arma! +6 Dano permanente.');
+    specialRoom.used=true; hideShrine();
+  } else if(type==='library'){
+    showToast('A Biblioteca Arcana concede seus segredos...');
+    specialRoom.used=true; hideShrine();
+    openAbilityScreen();
+  } else if(type==='altar'){
+    const cost=Math.max(1, Math.round(stats.maxHp*0.25));
+    health=Math.max(1, health-cost);
+    updateHUD();
+    showToast('Você sacrifica '+cost+' de vida...');
+    grantRelic();
+    specialRoom.used=true; hideShrine();
+  } else if(type==='luck'){
+    specialRoom.used=true; hideShrine();
+    if(Math.random()<0.5){
+      const g=Math.round(300*floorGoldMul); score+=g; updateHUD();
+      showToast('Sorte! +'+g+' pontos de ouro.');
+    } else {
+      showToast('Azar! Inimigos foram atraídos...');
+      const es2=enemyStatsForFloor(floor);
+      for(let i=0;i<2;i++){
+        const ang=Math.random()*Math.PI*2;
+        const sx=camera.position.x+Math.cos(ang)*4, sz=camera.position.z+Math.sin(ang)*4;
+        if(!isWallWorld(sx,sz)) makeEnemy(sx, sz, es2.hp, es2.speed, es2.dmg, 0x4a1f1f, false, false, null, null);
+      }
+    }
+  } else if(type==='treasure'){
+    const g=Math.round((400+floor*15)*floorGoldMul);
+    score+=g; updateHUD();
+    showToast('Tesouro encontrado! +'+g+' pontos.');
+    if(Math.random()<0.4){ grantGeneratedItem(['weapon','armor','shield'][Math.floor(Math.random()*3)], 0.3); }
+    specialRoom.used=true; hideShrine();
+  } else if(type==='miniboss'){
+    if(miniBossEnemy && miniBossEnemy.alive){ showToast('O guardião ainda está vivo!'); return; }
+    const es2=enemyStatsForFloor(floor);
+    const mb=makeEnemy(specialRoom.x, specialRoom.z+1.5, Math.round(es2.hp*3.2), es2.speed*1.1, Math.round(es2.dmg*1.6), 0x3a1030, false, false, null, 'sombrio');
+    mb.isMiniBoss=true;
+    miniBossEnemy=mb;
+    showToast('O guardião desperta! Derrote-o para o prêmio.');
+    playSound('roar');
+  } else if(type==='sanctuary'){
+    health=stats.maxHp; if(stats.maxMana>0) mana=stats.maxMana; stamina=stats.maxStamina;
+    updateHUD();
+    showToast('O Santuário cura seu corpo e sua mente.');
+    specialRoom.used=true; hideShrine();
+  }
+}
+function breakCrackedWall(){
+  if(!crackedWall || crackedWall.opened) return;
+  crackedWall.opened=true;
+  scene.remove(crackedWall.mesh);
+  currentGrid[crackedWall.cellR][crackedWall.cellC]='.';
+  const wm=wallMeshes.find(m=>Math.abs(m.position.x-crackedWall.x)<0.01 && Math.abs(m.position.z-crackedWall.z)<0.01);
+  if(wm){ scene.remove(wm); wallMeshes=wallMeshes.filter(m=>m!==wm); }
+  scene.updateMatrixWorld(true);
+  playSound('chest');
+  showToast('A parede desmorona, revelando uma câmara secreta!');
+  const roll=Math.random();
+  if(roll<0.4){ grantRelic(); }
+  else if(roll<0.75){ grantGeneratedItem(['weapon','armor','shield'][Math.floor(Math.random()*3)], 0.6); }
+  else { const g=Math.round(500*floorGoldMul); score+=g; showToast('Muito ouro encontrado! +'+g+' pontos'); updateHUD(); }
+}
+
 function openChest(ch){
   ch.opened=true;
   scene.remove(ch.group);
@@ -1624,14 +2095,14 @@ function openChest(ch){
   }
   const roll=Math.random();
   if(roll<0.30){
-    const g=Math.round((150+floor*10)*(stats.goldMul||1)); score+=g; showToast('Ouro encontrado! +'+g+' pontos');
+    const g=Math.round((150+floor*10)*(stats.goldMul||1)*floorGoldMul); score+=g; showToast('Ouro encontrado! +'+g+' pontos');
   } else if(roll<0.56){
     const heal=35; health=Math.min(stats.maxHp, health+heal); showToast('Poção de vida! +'+heal+' HP');
   } else if(roll<0.70){
     upgradePoints+=1; showToast('Runa de Poder! +1 Ponto de Aprimoramento');
   } else if(roll<0.83){
     if(stats.maxMana>0){ mana=stats.maxMana; showToast('Cristal de mana restaurado!'); }
-    else { const g=Math.round(200*(stats.goldMul||1)); score+=g; showToast('Baú do tesouro! +'+g+' pontos'); }
+    else { const g=Math.round(200*(stats.goldMul||1)*floorGoldMul); score+=g; showToast('Baú do tesouro! +'+g+' pontos'); }
   } else {
     openAbilityScreen();
     return;
@@ -1921,6 +2392,22 @@ function refreshInventoryUI(){
       list.appendChild(row);
     });
   }
+  if(ownedRelics.length>0){
+    const rHeading=document.createElement('p');
+    rHeading.className='keyHint';
+    rHeading.textContent='Relíquias ('+equippedRelics.length+'/3 equipadas)';
+    list.appendChild(rHeading);
+    ownedRelics.forEach(inst=>{
+      const def=RELIC_POOL.find(r=>r.id===inst.relicId);
+      if(!def) return;
+      const row=document.createElement('div');
+      row.className='upgradeRow';
+      const label = inst.equipped ? 'Guardar' : 'Equipar';
+      row.innerHTML = '<div class="upgradeInfo"><strong>'+def.name+'</strong><span>'+def.desc+'</span></div>'+
+        '<button class="btn small" data-relic="'+inst.instanceId+'">'+label+'</button>';
+      list.appendChild(row);
+    });
+  }
   if(ownedAbilities.length>0){
     const heading=document.createElement('p');
     heading.className='keyHint';
@@ -1935,6 +2422,13 @@ function refreshInventoryUI(){
   });
   list.querySelectorAll('[data-shield]').forEach(btn=>{
     btn.addEventListener('click', ()=>{ equipShield(btn.dataset.shield); refreshInventoryUI(); });
+  });
+  list.querySelectorAll('[data-relic]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const inst=ownedRelics.find(r=>r.instanceId===btn.dataset.relic);
+      if(inst && inst.equipped) unequipRelic(inst.instanceId); else equipRelic(btn.dataset.relic);
+      refreshInventoryUI();
+    });
   });
 }
 
@@ -1953,12 +2447,41 @@ function updateInteractables(dt){
     if(dx*dx+dz*dz<2.2*2.2){ currentNearMerchant=true; }
   }
 
+  currentNearSpecialRoom=false;
+  if(specialRoom && !specialRoom.used){
+    const dx=camera.position.x-specialRoom.x, dz=camera.position.z-specialRoom.z;
+    if(dx*dx+dz*dz<2.0*2.0){ currentNearSpecialRoom=true; }
+  }
+
+  currentNearCrackedWall=false;
+  if(crackedWall && !crackedWall.opened){
+    const dx=camera.position.x-crackedWall.x, dz=camera.position.z-crackedWall.z;
+    if(dx*dx+dz*dz<1.9*1.9){ currentNearCrackedWall=true; }
+  }
+
+  traps.forEach(tr=>{
+    if(tr.triggered) return;
+    const dx=camera.position.x-tr.x, dz=camera.position.z-tr.z;
+    if(dx*dx+dz*dz<0.9*0.9){
+      tr.triggered=true;
+      applyDamageToPlayer(14, 0.7, null);
+      playerFreezeTime=Math.max(playerFreezeTime,1.2);
+      showToast('Você pisou em uma armadilha!');
+    }
+  });
+
   const promptEl=document.getElementById('chestPrompt');
   if(nearChest){
     promptEl.innerHTML='Pressione <span class="key">E</span> para abrir o baú';
     promptEl.classList.add('show');
   } else if(currentNearMerchant){
     promptEl.innerHTML='Pressione <span class="key">E</span> para negociar com o mercador';
+    promptEl.classList.add('show');
+  } else if(currentNearSpecialRoom){
+    promptEl.innerHTML='Pressione <span class="key">E</span> para interagir: '+specialRoom.type.name;
+    promptEl.classList.add('show');
+  } else if(currentNearCrackedWall){
+    promptEl.innerHTML='Pressione <span class="key">E</span> para quebrar a parede rachada';
     promptEl.classList.add('show');
   } else {
     promptEl.classList.remove('show');
@@ -2004,6 +2527,13 @@ function showWaveBanner(text,sub){
 
 /* ================= HUD ================= */
 function updateHUD(){
+  if(currentBoss && currentBoss.alive){
+    const frac=Math.max(0, currentBoss.hp/currentBoss.maxHp);
+    document.getElementById('bossBarInner').style.width=(frac*100)+'%';
+  } else if(currentBoss && !currentBoss.alive){
+    hideBossBar();
+    currentBoss=null;
+  }
   const hp=Math.max(0, Math.round(health));
   document.getElementById('healthBarInner').style.width=hp+'%';
   document.getElementById('healthText').textContent=hp;
@@ -2189,6 +2719,8 @@ window.addEventListener('keydown', e=>{
   if(e.code==='KeyE'){
     if(currentNearChest){ openChest(currentNearChest); }
     else if(currentNearMerchant && gameActive && !gameOver){ openShopScreen(); }
+    else if(currentNearSpecialRoom && gameActive && !gameOver){ interactSpecialRoom(); }
+    else if(currentNearCrackedWall && gameActive && !gameOver){ breakCrackedWall(); }
   }
   if(e.code==='KeyU' && gameStarted && !gameOver){
     if(document.getElementById('upgradeScreen').classList.contains('hidden')) openUpgradeMenu();
@@ -2274,17 +2806,27 @@ document.querySelectorAll('.classCard[data-class]').forEach(card=>{
 
 document.getElementById('startBtn').addEventListener('click', ()=>{
   startScreen.classList.add('hidden');
+  ngPlusLevel=0;
   beginGame();
   lockPointer();
 });
 document.getElementById('resumeBtn').addEventListener('click', lockPointer);
 document.getElementById('restartBtn').addEventListener('click', ()=>{
   gameOverScreen.classList.add('hidden');
+  ngPlusLevel=0;
   beginGame();
   lockPointer();
 });
 document.getElementById('restartBtn2').addEventListener('click', ()=>{
   victoryScreen.classList.add('hidden');
+  ngPlusLevel=0;
+  beginGame();
+  lockPointer();
+});
+document.getElementById('ngPlusBtn').addEventListener('click', ()=>{
+  victoryScreen.classList.add('hidden');
+  ngPlusLevel++;
+  showToast('New Game+'+ngPlusLevel+' iniciado! Os inimigos estão mais fortes.');
   beginGame();
   lockPointer();
 });
@@ -2354,8 +2896,13 @@ document.querySelectorAll('#upgradeScreen [data-attr]').forEach(btn=>{
 function beginGame(){
   gameOver=false; gameStarted=true;
   score=0; upgradePoints=0; killCount=0; ownedAbilities=[];
+  ownedRelics=[]; equippedRelics=[];
+  WEAPON_CATALOG[playerClass]=WEAPON_CATALOG[playerClass].filter(w=>!w.id.startsWith('gen_'));
+  for(const k in WEAPON_CATALOG){ WEAPON_CATALOG[k]=WEAPON_CATALOG[k].filter(w=>!w.id.startsWith('gen_')); }
+  ARMOR_CATALOG.length=0; ARMOR_CATALOG.push(...ARMOR_CATALOG_BASE.map(a=>Object.assign({},a)));
+  SHIELD_CATALOG.length=0; SHIELD_CATALOG.push(...SHIELD_CATALOG_BASE.map(s=>Object.assign({},s)));
   stats=Object.assign({regen:0}, CLASS_CONFIG[playerClass]);
-  health=stats.maxHp; mana=stats.maxMana; stamina=stats.maxStamina; isSprinting=false; isBlocking=false;
+  health=stats.maxHp; mana=stats.maxMana; stamina=stats.maxStamina; isSprinting=false; isBlocking=false; playerFreezeTime=0;
   ownedWeapons=[WEAPON_CATALOG[playerClass][0].id];
   equippedWeaponId=WEAPON_CATALOG[playerClass][0].id;
   ownedArmors=[ARMOR_CATALOG[0].id];
@@ -2376,7 +2923,8 @@ function endGame(){
 function triggerVictory(){
   gameOver=true; gameActive=false;
   document.exitPointerLock();
-  document.getElementById('victoryStats').textContent='Pontos finais: '+score+' | Andares conquistados: '+floor;
+  const ngLabel = ngPlusLevel>0 ? (' | New Game+'+ngPlusLevel) : '';
+  document.getElementById('victoryStats').textContent='Pontos finais: '+score+' | Andares conquistados: '+floor+ngLabel;
   victoryScreen.classList.remove('hidden');
 }
 
@@ -2413,6 +2961,7 @@ function updatePlayer(dt){
     const shield=SHIELD_CATALOG.find(s=>s.id===equippedShieldId);
     if(shield) speed *= Math.max(0.25, 1+shield.speedMod);
   }
+  if(playerFreezeTime>0){ speed *= 0.45; }
   if(isSprinting){
     stamina=Math.max(0, stamina-SPRINT_DRAIN*(stats.sprintCostMul||1)*dt);
   }
@@ -2444,7 +2993,7 @@ function fireArrow(en){
   mesh.rotation.z=Math.atan2(dir.x,dir.z);
   mesh.position.set(from.x, 1.4, from.z);
   scene.add(mesh);
-  arrows.push({mesh:mesh, dir:dir, speed:9, dmg:en.dmg, life:3});
+  arrows.push({mesh:mesh, dir:dir, speed:9, dmg:en.dmg, life:3, sourceEn:en});
   playSound('bowshot');
 }
 function updateArrows(dt){
@@ -2455,7 +3004,7 @@ function updateArrows(dt){
     if(a.life<=0 || isWallWorld(a.mesh.position.x, a.mesh.position.z)){ scene.remove(a.mesh); return false; }
     const dx=a.mesh.position.x-camera.position.x, dz=a.mesh.position.z-camera.position.z;
     if(dx*dx+dz*dz < 0.6*0.6 && !gameOver){
-      applyDamageToPlayer(a.dmg, 0.8);
+      applyDamageToPlayer(a.dmg, 0.8, a.sourceEn);
       scene.remove(a.mesh);
       return false;
     }
@@ -2463,11 +3012,12 @@ function updateArrows(dt){
   });
 }
 
-function applyDamageToPlayer(amount, shakeAmt){
+function applyDamageToPlayer(amount, shakeAmt, sourceEn){
   if(gameOver) return;
   if(shakeAmt===undefined) shakeAmt=1;
   if(stats.dodgeChance && Math.random()<stats.dodgeChance){ showToast('Esquiva!'); return; }
   let reduction=stats.damageReduction||0;
+  if(currentFloorEvent==='curse') reduction=Math.max(0, reduction-0.15);
   let blocked=false;
   if(isBlocking && !stats.ranged){
     const shield=SHIELD_CATALOG.find(s=>s.id===equippedShieldId);
@@ -2480,6 +3030,11 @@ function applyDamageToPlayer(amount, shakeAmt){
   hitFlashScreen();
   playSound(blocked?'block':'hurt');
   shakeIntensity=Math.max(shakeIntensity, blocked?shakeAmt*0.3:shakeAmt);
+  if(!blocked && sourceEn && sourceEn.isElite){
+    if(sourceEn.eliteFlavor==='flamejante'){ playerBurnTime=3; playerBurnTickTimer=0.5; playerBurnDmg=Math.max(1,Math.round(amount*0.12)); }
+    else if(sourceEn.eliteFlavor==='congelado'){ playerFreezeTime=2; }
+    else if(sourceEn.eliteFlavor==='eletrico'){ if(Math.random()<0.35){ playerStunTime=0.9; showToast('Atordoado!'); } }
+  }
   updateHUD();
   if(health<=0){ health=0; updateHUD(); endGame(); }
 }
@@ -2493,15 +3048,59 @@ function updateEnemies(dt,t){
     const dist=Math.hypot(dx,dz);
     if(en.chargeState!=='charging') g.rotation.y=Math.atan2(dx,dz);
 
+    if(en.burnTime>0){
+      en.burnTime-=dt; en.burnTickTimer-=dt;
+      if(en.burnTickTimer<=0){
+        en.burnTickTimer=0.5;
+        en.hp-=en.burnDmg;
+        spawnDamageNumber(g.position, en.burnDmg, false);
+        if(en.hp<=0 && en.alive){ damageEnemy(en, 0, false); }
+      }
+    }
+    if(en.freezeTime>0) en.freezeTime-=dt;
+    if(en.stunTime>0){
+      en.stunTime-=dt;
+      if(en.healthBarFg){
+        const frac=Math.max(0, en.hp/en.maxHp);
+        en.healthBarFg.scale.x=Math.max(0.001, frac);
+        en.healthBarFg.position.x=-(en.barW*(1-frac))/2;
+      }
+      continue;
+    }
+    const enSpeed = en.freezeTime>0 ? en.speed*0.35 : en.speed;
+
     if(en.isBoss){
       if(!en.enraged && en.hp<=en.maxHp*0.5){
         en.enraged=true;
         en.speed=en.baseSpeed*1.35;
         en.dmg=Math.round(en.baseDmg*1.25);
-        en.baseColor=0x6a1050;
-        showToast('O Lorde Sombrio entra em fúria!');
+        en.baseColor=shadeBossEnrageColor(en.baseColor);
+        showToast((en.bossName||'O chefe')+' entra em fúria!');
         playSound('roar');
         shakeIntensity=Math.max(shakeIntensity,1.2);
+      }
+      if(en.bossExtra==='icenova'){
+        en.iceNovaCd-=dt;
+        if(en.iceNovaCd<=0){
+          en.iceNovaCd=5.5;
+          if(dist<3.5){
+            applyDamageToPlayer(Math.round(en.dmg*0.8), 1.1, en);
+            playerFreezeTime=2.5;
+            showToast('Nova de Gelo!');
+          }
+        }
+      } else if(en.bossExtra==='summon'){
+        en.summonCd-=dt;
+        if(en.summonCd<=0){
+          en.summonCd=9;
+          const sAng=Math.random()*Math.PI*2;
+          const sx=g.position.x+Math.cos(sAng)*1.6, sz=g.position.z+Math.sin(sAng)*1.6;
+          if(!isWallWorld(sx,sz) && enemies.length<60){
+            const es2=enemyStatsForFloor(floor);
+            makeEnemy(sx, sz, Math.round(es2.hp*0.7), es2.speed, es2.dmg, 0x4a1f1f, false, false, null, null);
+            showToast((en.bossName||'O chefe')+' invoca um servo!');
+          }
+        }
       }
       if(en.chargeState==='idle'){
         en.chargeCd-=dt;
@@ -2509,13 +3108,14 @@ function updateEnemies(dt,t){
           en.chargeState='telegraph'; en.chargeTimer=0.5;
         } else if(dist>1.4){
           const pos={x:g.position.x, z:g.position.z};
-          tryMoveEntity(pos, (dx/dist)*en.speed*dt, (dz/dist)*en.speed*dt, 0.5);
+          tryMoveEntity(pos, (dx/dist)*enSpeed*dt, (dz/dist)*enSpeed*dt, 0.5);
           g.position.x=pos.x; g.position.z=pos.z;
         } else {
           en.attackCd-=dt;
           if(en.attackCd<=0 && !gameOver){
             en.attackCd=1.1;
-            applyDamageToPlayer(en.dmg, 1);
+            applyDamageToPlayer(en.dmg, 1, en);
+            if(en.bossExtra==='vampiric'){ en.hp=Math.min(en.maxHp, en.hp+Math.round(en.dmg*0.3)); }
           }
         }
       } else if(en.chargeState==='telegraph'){
@@ -2528,12 +3128,13 @@ function updateEnemies(dt,t){
       } else if(en.chargeState==='charging'){
         en.chargeTimer-=dt;
         const pos={x:g.position.x, z:g.position.z};
-        tryMoveEntity(pos, en.chargeDir.x*en.speed*3.2*dt, en.chargeDir.z*en.speed*3.2*dt, 0.5);
+        tryMoveEntity(pos, en.chargeDir.x*enSpeed*3.2*dt, en.chargeDir.z*enSpeed*3.2*dt, 0.5);
         g.position.x=pos.x; g.position.z=pos.z;
         g.rotation.y=Math.atan2(en.chargeDir.x, en.chargeDir.z);
         if(!en.chargeHit && dist<1.6){
           en.chargeHit=true;
-          applyDamageToPlayer(Math.round(en.dmg*1.6), 1.4);
+          applyDamageToPlayer(Math.round(en.dmg*1.6), 1.4, en);
+          if(en.bossExtra==='vampiric'){ en.hp=Math.min(en.maxHp, en.hp+Math.round(en.dmg*0.5)); }
         }
         if(en.chargeTimer<=0){
           en.chargeState='idle'; en.chargeCd=4.5;
@@ -2543,11 +3144,11 @@ function updateEnemies(dt,t){
       const preferred=6.5;
       if(dist>preferred+0.5){
         const pos={x:g.position.x, z:g.position.z};
-        tryMoveEntity(pos, (dx/dist)*en.speed*dt, (dz/dist)*en.speed*dt, 0.35);
+        tryMoveEntity(pos, (dx/dist)*enSpeed*dt, (dz/dist)*enSpeed*dt, 0.35);
         g.position.x=pos.x; g.position.z=pos.z;
       } else if(dist<preferred-2 && dist>0.5){
         const pos={x:g.position.x, z:g.position.z};
-        tryMoveEntity(pos, -(dx/dist)*en.speed*0.7*dt, -(dz/dist)*en.speed*0.7*dt, 0.35);
+        tryMoveEntity(pos, -(dx/dist)*enSpeed*0.7*dt, -(dz/dist)*enSpeed*0.7*dt, 0.35);
         g.position.x=pos.x; g.position.z=pos.z;
       }
       en.attackCd-=dt;
@@ -2568,13 +3169,22 @@ function updateEnemies(dt,t){
         const rdx=mdx*cosA - mdz*sinA, rdz=mdx*sinA + mdz*cosA;
         mdx=rdx; mdz=rdz;
       }
-      tryMoveEntity(pos, mdx*en.speed*dt, mdz*en.speed*dt, 0.35);
+      if(en.eliteFlavor==='sombrio'){
+        en.blinkCd-=dt;
+        if(en.blinkCd<=0 && dist>3){
+          en.blinkCd=3.5;
+          const blinkDist=Math.min(dist*0.5, 3);
+          const nx=g.position.x+(dx/dist)*blinkDist, nz=g.position.z+(dz/dist)*blinkDist;
+          if(!isWallWorld(nx,nz)){ g.position.x=nx; g.position.z=nz; playSound('magic'); }
+        }
+      }
+      tryMoveEntity(pos, mdx*enSpeed*dt, mdz*enSpeed*dt, 0.35);
       g.position.x=pos.x; g.position.z=pos.z;
     } else if(!gameOver){
       en.attackCd-=dt;
       if(en.attackCd<=0){
         en.attackCd=1.0;
-        applyDamageToPlayer(en.dmg, 1);
+        applyDamageToPlayer(en.dmg, 1, en);
       }
     }
     if(en.hitFlash>0){
@@ -2583,6 +3193,12 @@ function updateEnemies(dt,t){
     } else if(en.isBoss && en.chargeState==='telegraph'){
       const flash = Math.sin(t*22)>0 ? 0xffcc55 : en.baseColor;
       en.parts.torso.material.color.setHex(flash);
+    } else if(en.burnTime>0){
+      en.parts.torso.material.color.setHex(Math.sin(t*10)>0 ? 0xff6a1a : en.baseColor);
+    } else if(en.freezeTime>0){
+      en.parts.torso.material.color.setHex(0x6ac8ff);
+    } else {
+      en.parts.torso.material.color.setHex(en.baseColor);
     }
     if(en.healthBarFg){
       const frac=Math.max(0, en.hp/en.maxHp);
@@ -2656,11 +3272,37 @@ function animate(){
   updateDyingEnemies(dt);
   updateSlashEffects(dt);
   if(shakeIntensity>0) shakeIntensity=Math.max(0, shakeIntensity-dt*4);
+  if(playerFreezeTime>0) playerFreezeTime=Math.max(0, playerFreezeTime-dt);
+  if(playerStunTime>0) playerStunTime=Math.max(0, playerStunTime-dt);
+  if(playerBurnTime>0 && !gameOver){
+    playerBurnTime-=dt; playerBurnTickTimer-=dt;
+    if(playerBurnTickTimer<=0){
+      playerBurnTickTimer=0.5;
+      health=Math.max(0, health-playerBurnDmg);
+      hitFlashScreen();
+      updateHUD();
+      if(health<=0){ endGame(); }
+    }
+  }
+
+  if(gameActive && !gameOver && currentFloorEvent==='firerain'){
+    firerainTimer-=dt;
+    if(firerainTimer<=0){
+      firerainTimer=6+Math.random()*3;
+      applyDamageToPlayer(6+Math.round(Math.random()*4), 0.5, null);
+      showToast('Uma brasa caiu do teto!');
+    }
+  }
+  if(specialRoom && specialRoom.orb){
+    specialRoom.orb.position.y=0.95+Math.sin(t*2+specialRoom.bobPhase)*0.04;
+    specialRoom.group.rotation.y=t*0.4;
+  }
 
   if(gameActive && !gameOver){
     updatePlayer(dt);
-    updateEnemies(dt,t);
-    updateArrows(dt);
+    const enemyDt = (isBlocking && stats.hourglassCount>0) ? dt*0.4 : dt;
+    updateEnemies(enemyDt,t);
+    updateArrows(enemyDt);
     updateInteractables(dt);
     if(stats.maxMana>0){ mana=Math.min(stats.maxMana, mana+stats.manaRegen*dt); }
     if(!isSprinting){ stamina=Math.min(stats.maxStamina, stamina+STAMINA_REGEN*(stats.staminaRegenMul||1)*dt); }
