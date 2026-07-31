@@ -2579,13 +2579,43 @@ function updateVisitedCells(){
   }
 }
 
+const MAP_COLORS = {
+  wall:'rgba(20,15,10,0.95)',
+  wallEdge:'rgba(110,88,55,0.55)',
+  floor:'rgba(206,188,148,0.95)',
+  floorEdge:'rgba(80,64,40,0.35)',
+  chest:'#ffd24a',
+  merchant:'#4ac8ff',
+  stairsLocked:'#ff5a3c',
+  stairsUnlocked:'#4aff8a',
+  enemy:'#ff3b3b',
+  elite:'#ff9c1a',
+  miniboss:'#c060ff',
+  boss:'#ff2ecb',
+  crack:'#ffb347',
+  player:'#fff6e0',
+  playerEdge:'#1a1108'
+};
+function mapMarkerColor(en){
+  if(en.isBoss) return MAP_COLORS.boss;
+  if(en.isMiniBoss) return MAP_COLORS.miniboss;
+  if(en.isElite) return MAP_COLORS.elite;
+  return MAP_COLORS.enemy;
+}
+function mapMarkerRadius(en, baseR){
+  if(en.isBoss) return baseR*1.8;
+  if(en.isMiniBoss) return baseR*1.6;
+  if(en.isElite) return baseR*1.3;
+  return baseR;
+}
+
 function drawMinimap(){
   const cols=currentCols, rows=currentRows;
   if(!currentGrid || currentGrid.length===0 || !cols || !rows) return;
   updateVisitedCells();
   const W=minimapCanvas.width, H=minimapCanvas.height;
   minimapCtx.clearRect(0,0,W,H);
-  minimapCtx.fillStyle='rgba(10,7,4,0.55)'; minimapCtx.fillRect(0,0,W,H);
+  minimapCtx.fillStyle='rgba(4,3,2,0.95)'; minimapCtx.fillRect(0,0,W,H);
 
   const zoomPx=20;
   const px=camera.position.x/CELL, pz=camera.position.z/CELL;
@@ -2599,48 +2629,57 @@ function drawMinimap(){
       if(!visited.has(r+','+c)) continue;
       const isWall=currentGrid[r][c]==='#';
       const sx=W/2+(c-px)*zoomPx, sy=H/2+(r-pz)*zoomPx;
-      minimapCtx.fillStyle = isWall ? 'rgba(90,78,60,0.6)' : 'rgba(180,160,120,0.32)';
+      minimapCtx.fillStyle = isWall ? MAP_COLORS.wall : MAP_COLORS.floor;
       minimapCtx.fillRect(sx-zoomPx/2, sy-zoomPx/2, zoomPx+0.6, zoomPx+0.6);
+      minimapCtx.strokeStyle = isWall ? MAP_COLORS.wallEdge : MAP_COLORS.floorEdge;
+      minimapCtx.lineWidth=1;
+      minimapCtx.strokeRect(sx-zoomPx/2, sy-zoomPx/2, zoomPx+0.6, zoomPx+0.6);
     }
+  }
+  function marker(wx,wz,color,r){
+    const p=mmPoint(wx,wz);
+    minimapCtx.fillStyle=color;
+    minimapCtx.strokeStyle='rgba(0,0,0,0.8)';
+    minimapCtx.lineWidth=1.4;
+    minimapCtx.beginPath(); minimapCtx.arc(p.x,p.y,r,0,Math.PI*2); minimapCtx.fill(); minimapCtx.stroke();
   }
   chests.forEach(ch=>{
     if(ch.opened) return;
     const cc=Math.floor(ch.x/CELL), rr=Math.floor(ch.z/CELL);
     if(!visited.has(rr+','+cc)) return;
-    const p=mmPoint(ch.x,ch.z);
-    minimapCtx.fillStyle='#f0c877';
-    minimapCtx.beginPath(); minimapCtx.arc(p.x,p.y,2.6,0,Math.PI*2); minimapCtx.fill();
+    marker(ch.x, ch.z, MAP_COLORS.chest, 3);
   });
+  if(specialRoom && !specialRoom.used){
+    const cc=Math.floor(specialRoom.x/CELL), rr=Math.floor(specialRoom.z/CELL);
+    if(visited.has(rr+','+cc)) marker(specialRoom.x, specialRoom.z, '#'+specialRoom.type.color.toString(16).padStart(6,'0'), 3.4);
+  }
+  if(crackedWall && !crackedWall.opened){
+    const cc=Math.floor(crackedWall.x/CELL), rr=Math.floor(crackedWall.z/CELL);
+    if(visited.has(rr+','+cc)) marker(crackedWall.x, crackedWall.z, MAP_COLORS.crack, 2.4);
+  }
   if(merchant){
     const cc=Math.floor(merchant.x/CELL), rr=Math.floor(merchant.z/CELL);
-    if(visited.has(rr+','+cc)){
-      const p=mmPoint(merchant.x,merchant.z);
-      minimapCtx.fillStyle='#7dc4ff';
-      minimapCtx.beginPath(); minimapCtx.arc(p.x,p.y,3,0,Math.PI*2); minimapCtx.fill();
-    }
+    if(visited.has(rr+','+cc)) marker(merchant.x, merchant.z, MAP_COLORS.merchant, 3.2);
   }
   if(stairsPos){
     const cc=Math.floor(stairsPos.x/CELL), rr=Math.floor(stairsPos.z/CELL);
-    if(visited.has(rr+','+cc)){
-      const p=mmPoint(stairsPos.x,stairsPos.z);
-      minimapCtx.fillStyle = hasKey ? '#5cf0a0' : '#8a8a8a';
-      minimapCtx.beginPath(); minimapCtx.arc(p.x,p.y,3.2,0,Math.PI*2); minimapCtx.fill();
-    }
+    if(visited.has(rr+','+cc)) marker(stairsPos.x, stairsPos.z, hasKey?MAP_COLORS.stairsUnlocked:MAP_COLORS.stairsLocked, 3.4);
   }
   enemies.forEach(en=>{
     if(!en.alive) return;
     const cc=Math.floor(en.group.position.x/CELL), rr=Math.floor(en.group.position.z/CELL);
     if(!visited.has(rr+','+cc)) return;
-    const p=mmPoint(en.group.position.x, en.group.position.z);
-    minimapCtx.fillStyle = en.isBoss? '#ff2ecb' : '#e04040';
-    minimapCtx.beginPath(); minimapCtx.arc(p.x,p.y, en.isBoss?4:2.2, 0, Math.PI*2); minimapCtx.fill();
+    marker(en.group.position.x, en.group.position.z, mapMarkerColor(en), mapMarkerRadius(en,2.2));
   });
   minimapCtx.save();
   minimapCtx.translate(W/2,H/2);
   minimapCtx.rotate(yaw);
-  minimapCtx.fillStyle='#fff2d0';
+  minimapCtx.fillStyle=MAP_COLORS.player;
+  minimapCtx.strokeStyle=MAP_COLORS.playerEdge;
+  minimapCtx.lineWidth=1.4;
   minimapCtx.beginPath();
-  minimapCtx.moveTo(0,-6); minimapCtx.lineTo(4,5); minimapCtx.lineTo(-4,5); minimapCtx.closePath(); minimapCtx.fill();
+  minimapCtx.moveTo(0,-7); minimapCtx.lineTo(5,6); minimapCtx.lineTo(-5,6); minimapCtx.closePath();
+  minimapCtx.fill(); minimapCtx.stroke();
   minimapCtx.restore();
 }
 
@@ -2651,7 +2690,7 @@ function drawFullMap(){
   const ctx=canvas.getContext('2d');
   const W=canvas.width, H=canvas.height;
   ctx.clearRect(0,0,W,H);
-  ctx.fillStyle='#0a0704'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='#040302'; ctx.fillRect(0,0,W,H);
   const cellPx=Math.min(W/cols, H/rows);
   const pc=Math.floor(camera.position.x/CELL), pr=Math.floor(camera.position.z/CELL);
 
@@ -2659,43 +2698,39 @@ function drawFullMap(){
     const parts=key.split(',');
     const r=parseInt(parts[0],10), c=parseInt(parts[1],10);
     const isWall=currentGrid[r][c]==='#';
-    ctx.fillStyle = isWall ? 'rgba(90,78,60,0.7)' : 'rgba(180,160,120,0.35)';
+    ctx.fillStyle = isWall ? MAP_COLORS.wall : MAP_COLORS.floor;
     ctx.fillRect(c*cellPx, r*cellPx, cellPx+0.6, cellPx+0.6);
+    ctx.strokeStyle = isWall ? MAP_COLORS.wallEdge : MAP_COLORS.floorEdge;
+    ctx.lineWidth=1;
+    ctx.strokeRect(c*cellPx, r*cellPx, cellPx+0.6, cellPx+0.6);
   });
-  chests.forEach(ch=>{
-    if(ch.opened) return;
-    const cc=Math.floor(ch.x/CELL), rr=Math.floor(ch.z/CELL);
+  function marker(wx,wz,color,rMul){
+    const cc=Math.floor(wx/CELL), rr=Math.floor(wz/CELL);
     if(!visited.has(rr+','+cc)) return;
-    ctx.fillStyle='#f0c877';
-    ctx.beginPath(); ctx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, cellPx*0.22, 0, Math.PI*2); ctx.fill();
-  });
-  if(merchant){
-    const cc=Math.floor(merchant.x/CELL), rr=Math.floor(merchant.z/CELL);
-    if(visited.has(rr+','+cc)){
-      ctx.fillStyle='#7dc4ff';
-      ctx.beginPath(); ctx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, cellPx*0.25, 0, Math.PI*2); ctx.fill();
-    }
+    ctx.fillStyle=color;
+    ctx.strokeStyle='rgba(0,0,0,0.8)';
+    ctx.lineWidth=Math.max(1, cellPx*0.03);
+    ctx.beginPath(); ctx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, cellPx*rMul, 0, Math.PI*2);
+    ctx.fill(); ctx.stroke();
   }
-  if(stairsPos){
-    const cc=Math.floor(stairsPos.x/CELL), rr=Math.floor(stairsPos.z/CELL);
-    if(visited.has(rr+','+cc)){
-      ctx.fillStyle = hasKey ? '#5cf0a0' : '#8a8a8a';
-      ctx.beginPath(); ctx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, cellPx*0.28, 0, Math.PI*2); ctx.fill();
-    }
-  }
+  chests.forEach(ch=>{ if(!ch.opened) marker(ch.x, ch.z, MAP_COLORS.chest, 0.22); });
+  if(specialRoom && !specialRoom.used) marker(specialRoom.x, specialRoom.z, '#'+specialRoom.type.color.toString(16).padStart(6,'0'), 0.26);
+  if(crackedWall && !crackedWall.opened) marker(crackedWall.x, crackedWall.z, MAP_COLORS.crack, 0.18);
+  if(merchant) marker(merchant.x, merchant.z, MAP_COLORS.merchant, 0.25);
+  if(stairsPos) marker(stairsPos.x, stairsPos.z, hasKey?MAP_COLORS.stairsUnlocked:MAP_COLORS.stairsLocked, 0.28);
   enemies.forEach(en=>{
     if(!en.alive) return;
-    const cc=Math.floor(en.group.position.x/CELL), rr=Math.floor(en.group.position.z/CELL);
-    if(!visited.has(rr+','+cc)) return;
-    ctx.fillStyle = en.isBoss? '#ff2ecb' : '#e04040';
-    ctx.beginPath(); ctx.arc(cc*cellPx+cellPx/2, rr*cellPx+cellPx/2, cellPx*(en.isBoss?0.32:0.18), 0, Math.PI*2); ctx.fill();
+    marker(en.group.position.x, en.group.position.z, mapMarkerColor(en), en.isBoss?0.34:(en.isMiniBoss?0.3:(en.isElite?0.24:0.18)));
   });
   ctx.save();
   ctx.translate(pc*cellPx+cellPx/2, pr*cellPx+cellPx/2);
   ctx.rotate(yaw);
-  ctx.fillStyle='#fff2d0';
+  ctx.fillStyle=MAP_COLORS.player;
+  ctx.strokeStyle=MAP_COLORS.playerEdge;
+  ctx.lineWidth=Math.max(1, cellPx*0.04);
   ctx.beginPath();
-  ctx.moveTo(0,-cellPx*0.42); ctx.lineTo(cellPx*0.3,cellPx*0.34); ctx.lineTo(-cellPx*0.3,cellPx*0.34); ctx.closePath(); ctx.fill();
+  ctx.moveTo(0,-cellPx*0.42); ctx.lineTo(cellPx*0.3,cellPx*0.34); ctx.lineTo(-cellPx*0.3,cellPx*0.34); ctx.closePath();
+  ctx.fill(); ctx.stroke();
   ctx.restore();
 }
 function toggleFullMap(){
