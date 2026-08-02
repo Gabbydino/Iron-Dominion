@@ -148,6 +148,27 @@
   #chestPrompt.show{opacity:1;transform:translate(-50%,0);}
 
   #toastContainer{position:absolute;left:50%;top:78px;transform:translateX(-50%);display:flex;flex-direction:column;gap:6px;align-items:center;}
+
+  #potionBar{position:absolute;right:22px;bottom:22px;display:flex;gap:10px;pointer-events:none;}
+  .potionSlot{
+    position:relative;width:54px;height:54px;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 35% 30%, #3a3022, #17130c 78%);
+    border:2px solid var(--gold);border-radius:8px;
+    box-shadow:inset 0 0 10px rgba(0,0,0,.7), 0 4px 10px rgba(0,0,0,.5);
+    transition:opacity .2s ease, transform .15s ease;
+  }
+  .potionSlot svg{width:24px;height:24px;color:var(--gold-bright);}
+  .potionSlot.empty{opacity:.35;filter:grayscale(0.6);}
+  .potionSlot .potionKey{
+    position:absolute;top:-9px;left:-9px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,#3a2f1f,#160f0a);border:1px solid var(--gold);border-radius:50%;
+    color:var(--gold-bright);font-size:11px;font-family:Georgia,serif;box-shadow:0 2px 4px rgba(0,0,0,.6);
+  }
+  .potionSlot .potionCount{
+    position:absolute;bottom:-7px;right:-7px;min-width:19px;height:19px;padding:0 3px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(180deg,#7a2b1f,#3d1108);border:1px solid var(--gold);border-radius:9px;
+    color:#f5ddb8;font-size:11px;font-weight:bold;font-family:Georgia,serif;
+  }
   .toast{
     background:linear-gradient(180deg,#342c1f,#160f0a);border:1px solid var(--gold);color:var(--gold-bright);
     padding:7px 18px;border-radius:3px;font-size:12.5px;letter-spacing:1px;white-space:nowrap;
@@ -364,6 +385,24 @@
   <div id="chestPrompt" class="ornate">Pressione <span class="key">E</span> para abrir o baú</div>
   <div id="toastContainer"></div>
 
+  <div id="potionBar">
+    <div class="potionSlot empty" id="potionSlotHealth">
+      <span class="potionKey">1</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-shield"/></svg>
+      <span class="potionCount" id="potionCountHealth">0</span>
+    </div>
+    <div class="potionSlot empty" id="potionSlotStamina">
+      <span class="potionKey">2</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-bolt"/></svg>
+      <span class="potionCount" id="potionCountStamina">0</span>
+    </div>
+    <div class="potionSlot empty" id="potionSlotMana" style="display:none;">
+      <span class="potionKey">3</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><use href="#icon-mana"/></svg>
+      <span class="potionCount" id="potionCountMana">0</span>
+    </div>
+  </div>
+
   <div id="waveBanner">
     <svg viewBox="0 0 24 24" fill="none" stroke="#c79a4b"><use href="#icon-scroll"/></svg>
     <div><span class="txt">Andar 1</span><span class="sub">Prepare-se</span></div>
@@ -449,6 +488,7 @@
     <p><span class="key">W A S D</span> mover &nbsp; <span class="key">Shift</span> correr</p>
     <p><span class="key">Mouse</span> olhar &nbsp; <span class="key">Clique</span> atacar &nbsp; <span class="key">Botão direito</span> bloquear</p>
     <p><span class="key">E</span> interagir &nbsp; <span class="key">U</span> aprimorar &nbsp; <span class="key">I</span> inventário &nbsp; <span class="key">M</span> mapa</p>
+    <p><span class="key">1</span> poção de vida &nbsp; <span class="key">2</span> poção de estamina &nbsp; <span class="key">3</span> poção de mana</p>
     <div class="divider">❖</div>
     <p>Desça 30 andares cada vez mais perigosos e saqueie baús para aprimorar seus atributos. A escadaria de cada andar fica trancada — encontre a chave escondida em um dos baús para destrancá-la.</p>
     <p>Ataques e corridas consomem estamina, então escolha bem seus golpes. Alguns baús guardam relíquias mágicas que concedem habilidades permanentes. Um mercador errante aparece em 3 andares da masmorra — negocie por armas, armaduras, escudos e poções. Guerreiro e Paladino podem erguer o escudo para bloquear parte do dano.</p>
@@ -1091,10 +1131,12 @@ function grantGeneratedItem(slot, bonus){
 }
 
 const POTION_CATALOG = [
-  { id:'potion_health', name:'Poção de Vida Maior', price:120, effect:'heal', amount:60, desc:'Restaura 60 pontos de vida instantaneamente.' },
-  { id:'potion_stamina', name:'Elixir de Vigor', price:90, effect:'stamina', desc:'Restaura toda a sua estamina.' },
-  { id:'potion_mana', name:'Cristal de Mana', price:100, effect:'mana', classFilter:'mage', desc:'Restaura toda a sua mana.' }
+  { id:'potion_health', name:'Poção de Vida Maior', price:120, effect:'heal', amount:60, slot:'health', desc:'Guarda no cinto. Restaura 60 de vida quando usada (tecla 1).' },
+  { id:'potion_stamina', name:'Elixir de Vigor', price:90, effect:'stamina', slot:'stamina', desc:'Guarda no cinto. Restaura toda a estamina quando usada (tecla 2).' },
+  { id:'potion_mana', name:'Cristal de Mana', price:100, effect:'mana', slot:'mana', classFilter:'mage', desc:'Guarda no cinto. Restaura toda a mana quando usada (tecla 3).' }
 ];
+let potionInventory = { health:0, stamina:0, mana:0 };
+const POTION_SLOT_KEYS = { health:'1', stamina:'2', mana:'3' };
 
 const WEAPON_VISUALS = {
   sword_short:{ bladeLen:0.75, bladeColor:0xcfd6dd, hiltColor:0x3a2a18, axe:false },
@@ -1112,8 +1154,50 @@ const WEAPON_VISUALS = {
   sword_blessed:{ bladeLen:0.78, bladeColor:0xf0e6c8, hiltColor:0x3a2a18, axe:false },
   mace_holy:{ bladeLen:0.5, bladeColor:0xf0d080, hiltColor:0x2a1c10, axe:true },
   sword_swift:{ bladeLen:0.68, bladeColor:0xe8dcc0, hiltColor:0x2a1c10, axe:false },
-  hammer_judgement:{ bladeLen:0.5, bladeColor:0xd8c8a0, hiltColor:0x241a10, axe:true }
+  hammer_judgement:{ bladeLen:0.5, bladeColor:0xd8c8a0, hiltColor:0x241a10, axe:true },
+  ex5_warrior:{ bladeLen:0.85, bladeColor:0xbfe8e0, hiltColor:0x1a3a38, axe:false },
+  ex5_mage:{ orbColor:0x4ad1c8, emissive:0x1a8a80 },
+  ex5_ranger:{ bowColor:0x2a5a54 },
+  ex5_paladin:{ bladeLen:0.85, bladeColor:0xd8f0ec, hiltColor:0x1a3a38, axe:false },
+  ex15_warrior:{ bladeLen:0.6, bladeColor:0xff8a8a, hiltColor:0x3a0e10, axe:true },
+  ex15_mage:{ orbColor:0xff3b4a, emissive:0x8a0a14 },
+  ex15_ranger:{ bowColor:0x5a1418 },
+  ex15_paladin:{ bladeLen:0.55, bladeColor:0xffb0b0, hiltColor:0x3a0e10, axe:true },
+  ex25_warrior:{ bladeLen:0.9, bladeColor:0xffcf8a, hiltColor:0x3a1a06, axe:false },
+  ex25_mage:{ orbColor:0xff8a1a, emissive:0xff3c0a },
+  ex25_ranger:{ bowColor:0x5a2c0a },
+  ex25_paladin:{ bladeLen:0.55, bladeColor:0xffe0a0, hiltColor:0x3a1a06, axe:true }
 };
+const FLOOR_EXCLUSIVE_WEAPONS = {
+  5: {
+    warrior:{ id:'ex5_warrior', name:'Lâmina dos Ecos', price:420, dmgMod:14, cooldownMod:1.05, desc:'Exclusiva do Andar 5. Ecoa com um brilho espectral.' },
+    mage:{ id:'ex5_mage', name:'Cajado das Sombras', price:420, dmgMod:12, cooldownMod:1, manaCostMod:-2, desc:'Exclusiva do Andar 5. Sussurra segredos antigos.' },
+    ranger:{ id:'ex5_ranger', name:'Arco Sussurrante', price:420, dmgMod:11, cooldownMod:0.9, desc:'Exclusiva do Andar 5. Disparos silenciosos e precisos.' },
+    paladin:{ id:'ex5_paladin', name:'Lâmina da Vigília', price:420, dmgMod:13, cooldownMod:1.05, desc:'Exclusiva do Andar 5. Forjada para guardiões eternos.' }
+  },
+  15: {
+    warrior:{ id:'ex15_warrior', name:'Machado Carmesim', price:620, dmgMod:24, cooldownMod:1.2, desc:'Exclusiva do Andar 15. Sedenta por sangue.' },
+    mage:{ id:'ex15_mage', name:'Cajado Sanguinário', price:620, dmgMod:20, cooldownMod:1, manaCostMod:2, desc:'Exclusiva do Andar 15. Canaliza poder sombrio.' },
+    ranger:{ id:'ex15_ranger', name:'Arco Carmesim', price:620, dmgMod:19, cooldownMod:0.85, desc:'Exclusiva do Andar 15. Flechas que quase nunca erram.' },
+    paladin:{ id:'ex15_paladin', name:'Martelo Carmesim', price:620, dmgMod:26, cooldownMod:1.25, desc:'Exclusiva do Andar 15. Julgamento sangrento.' }
+  },
+  25: {
+    warrior:{ id:'ex25_warrior', name:'Espada Vulcânica', price:850, dmgMod:34, cooldownMod:1.15, desc:'Exclusiva do Andar 25. Forjada em magma vivo.' },
+    mage:{ id:'ex25_mage', name:'Cajado do Magma', price:850, dmgMod:30, cooldownMod:0.95, manaCostMod:-4, desc:'Exclusiva do Andar 25. Fervilha com poder ígneo.' },
+    ranger:{ id:'ex25_ranger', name:'Arco Incandescente', price:850, dmgMod:28, cooldownMod:0.8, desc:'Exclusiva do Andar 25. Flechas em brasa.' },
+    paladin:{ id:'ex25_paladin', name:'Maça Incandescente', price:850, dmgMod:36, cooldownMod:1.3, desc:'Exclusiva do Andar 25. Fé forjada em fogo.' }
+  }
+};
+function ensureFloorExclusiveWeapon(){
+  const excl=FLOOR_EXCLUSIVE_WEAPONS[floor];
+  if(!excl) return;
+  const item=excl[playerClass];
+  if(!item) return;
+  const cat=WEAPON_CATALOG[playerClass];
+  if(!cat.find(w=>w.id===item.id)){
+    cat.push(Object.assign({exclusiveFloor:floor}, item));
+  }
+}
 let ownedWeapons=[];
 let equippedWeaponId=null;
 let merchant=null;
@@ -1883,7 +1967,7 @@ function damageEnemy(en,dmg,isCrit){
     en.alive=false;
     killCount++;
     if(killCount%4===0){ upgradePoints++; showToast('+1 Ponto de Aprimoramento'); }
-    score += Math.round((en.isBoss?1000:en.isElite?250:en.isMiniBoss?400:100)*(stats.scoreMul||1));
+    score += Math.round((en.isBoss?550:en.isElite?130:en.isMiniBoss?200:50)*(stats.scoreMul||1));
     if(en.healthBarBg){ en.healthBarBg.visible=false; en.healthBarFg.visible=false; }
     dyingEnemies.push({group:en.group, t:0, baseScale:en.group.scale.x||1});
     playSound('enemyDeath');
@@ -1988,19 +2072,24 @@ function attack(){
   if(attackCooldownTimer>0) return;
   if(isBlocking) return;
   if(playerStunTime>0) return;
-  if(stamina<stats.attackStaminaCost){ showToast('Sem estamina!'); return; }
+  const usesMana = stats.ranged && stats.maxMana>0;
+  if(!usesMana && stamina<stats.attackStaminaCost){ showToast('Sem estamina!'); return; }
   if(!stats.ranged){
     stamina-=stats.attackStaminaCost;
     attackCooldownTimer=stats.attackCooldown;
     playSound('swing');
     spawnSlashEffect();
     meleeAttack();
-  } else {
-    if(stats.maxMana>0 && mana<stats.manaCost){ showToast('Mana insuficiente!'); return; }
-    stamina-=stats.attackStaminaCost;
-    if(stats.maxMana>0) mana-=stats.manaCost;
+  } else if(usesMana){
+    if(mana<stats.manaCost){ showToast('Mana insuficiente!'); return; }
+    mana-=stats.manaCost;
     attackCooldownTimer=stats.attackCooldown;
-    playSound(stats.maxMana>0 ? 'magic' : 'bowshot');
+    playSound('magic');
+    magicAttack();
+  } else {
+    stamina-=stats.attackStaminaCost;
+    attackCooldownTimer=stats.attackCooldown;
+    playSound('bowshot');
     magicAttack();
   }
   attackAnimT=1;
@@ -2034,7 +2123,7 @@ function interactSpecialRoom(){
   } else if(type==='luck'){
     specialRoom.used=true; hideShrine();
     if(Math.random()<0.5){
-      const g=Math.round(300*floorGoldMul); score+=g; updateHUD();
+      const g=Math.round(160*floorGoldMul); score+=g; updateHUD();
       showToast('Sorte! +'+g+' pontos de ouro.');
     } else {
       showToast('Azar! Inimigos foram atraídos...');
@@ -2046,7 +2135,7 @@ function interactSpecialRoom(){
       }
     }
   } else if(type==='treasure'){
-    const g=Math.round((400+floor*15)*floorGoldMul);
+    const g=Math.round((220+floor*8)*floorGoldMul);
     score+=g; updateHUD();
     showToast('Tesouro encontrado! +'+g+' pontos.');
     if(Math.random()<0.4){ grantGeneratedItem(['weapon','armor','shield'][Math.floor(Math.random()*3)], 0.3); }
@@ -2079,7 +2168,7 @@ function breakCrackedWall(){
   const roll=Math.random();
   if(roll<0.4){ grantRelic(); }
   else if(roll<0.75){ grantGeneratedItem(['weapon','armor','shield'][Math.floor(Math.random()*3)], 0.6); }
-  else { const g=Math.round(500*floorGoldMul); score+=g; showToast('Muito ouro encontrado! +'+g+' pontos'); updateHUD(); }
+  else { const g=Math.round(260*floorGoldMul); score+=g; showToast('Muito ouro encontrado! +'+g+' pontos'); updateHUD(); }
 }
 
 function openChest(ch){
@@ -2095,14 +2184,14 @@ function openChest(ch){
   }
   const roll=Math.random();
   if(roll<0.30){
-    const g=Math.round((150+floor*10)*(stats.goldMul||1)*floorGoldMul); score+=g; showToast('Ouro encontrado! +'+g+' pontos');
+    const g=Math.round((80+floor*5)*(stats.goldMul||1)*floorGoldMul); score+=g; showToast('Ouro encontrado! +'+g+' pontos');
   } else if(roll<0.56){
     const heal=35; health=Math.min(stats.maxHp, health+heal); showToast('Poção de vida! +'+heal+' HP');
   } else if(roll<0.70){
     upgradePoints+=1; showToast('Runa de Poder! +1 Ponto de Aprimoramento');
   } else if(roll<0.83){
     if(stats.maxMana>0){ mana=stats.maxMana; showToast('Cristal de mana restaurado!'); }
-    else { const g=Math.round(200*(stats.goldMul||1)*floorGoldMul); score+=g; showToast('Baú do tesouro! +'+g+' pontos'); }
+    else { const g=Math.round(110*(stats.goldMul||1)*floorGoldMul); score+=g; showToast('Baú do tesouro! +'+g+' pontos'); }
   } else {
     openAbilityScreen();
     return;
@@ -2241,6 +2330,7 @@ function buyShield(shieldId){
 function openShopScreen(){
   gameActive=false;
   document.exitPointerLock();
+  ensureFloorExclusiveWeapon();
   refreshShopUI();
   document.getElementById('shopScreen').classList.remove('hidden');
 }
@@ -2257,13 +2347,15 @@ function refreshShopUI(){
   heading1.className='keyHint';
   heading1.textContent='Armas';
   list.appendChild(heading1);
-  cat.forEach(w=>{
+  cat.filter(w=>!w.exclusiveFloor || w.exclusiveFloor===floor).forEach(w=>{
     const owned=ownedWeapons.includes(w.id);
     const equipped=equippedWeaponId===w.id;
     const row=document.createElement('div');
     row.className='upgradeRow';
+    if(w.exclusiveFloor) row.style.borderLeft='2px solid #ffb340';
+    const namePrefix = w.exclusiveFloor ? '★ ' : '';
     const label = equipped ? 'Equipado' : (owned ? 'Equipar' : ('Comprar ('+w.price+')'));
-    row.innerHTML = '<div class="upgradeInfo"><strong>'+w.name+'</strong><span>'+w.desc+'</span></div>'+
+    row.innerHTML = '<div class="upgradeInfo"><strong>'+namePrefix+w.name+'</strong><span>'+w.desc+'</span></div>'+
       '<button class="btn small'+(equipped?' disabled':'')+'" data-weapon="'+w.id+'">'+label+'</button>';
     list.appendChild(row);
   });
@@ -2326,13 +2418,35 @@ function buyPotion(id){
   if(!p) return;
   if(p.classFilter && p.classFilter!==playerClass) return;
   if(score<p.price){ showToast('Pontos insuficientes!'); return; }
+  if(potionInventory[p.slot]>=9){ showToast('Seu cinto para essa poção está cheio!'); return; }
   score-=p.price;
-  if(p.effect==='heal'){ health=Math.min(stats.maxHp, health+p.amount); showToast('Vida restaurada! +'+p.amount+' HP'); }
-  else if(p.effect==='stamina'){ stamina=stats.maxStamina; showToast('Estamina totalmente restaurada!'); }
-  else if(p.effect==='mana'){ mana=stats.maxMana; showToast('Mana totalmente restaurada!'); }
+  potionInventory[p.slot]=Math.min(9, potionInventory[p.slot]+1);
+  showToast(p.name+' guardada no cinto! (tecla '+POTION_SLOT_KEYS[p.slot]+')');
   playSound('chest');
   updateHUD();
+  updatePotionBar();
   refreshShopUI();
+}
+function usePotion(slot){
+  if(!gameActive || gameOver) return;
+  if(slot==='mana' && stats.maxMana<=0) return;
+  if(potionInventory[slot]<=0){ showToast('Você não tem poções desse tipo!'); return; }
+  potionInventory[slot]--;
+  if(slot==='health'){ health=Math.min(stats.maxHp, health+60); showToast('Poção de vida usada! +60 HP'); }
+  else if(slot==='stamina'){ stamina=stats.maxStamina; showToast('Elixir de vigor usado! Estamina restaurada'); }
+  else if(slot==='mana'){ mana=stats.maxMana; showToast('Cristal de mana usado! Mana restaurada'); }
+  playSound('upgrade');
+  updateHUD();
+  updatePotionBar();
+}
+function updatePotionBar(){
+  document.getElementById('potionCountHealth').textContent=potionInventory.health;
+  document.getElementById('potionCountStamina').textContent=potionInventory.stamina;
+  document.getElementById('potionCountMana').textContent=potionInventory.mana;
+  document.getElementById('potionSlotHealth').classList.toggle('empty', potionInventory.health<=0);
+  document.getElementById('potionSlotStamina').classList.toggle('empty', potionInventory.stamina<=0);
+  document.getElementById('potionSlotMana').classList.toggle('empty', potionInventory.mana<=0);
+  document.getElementById('potionSlotMana').style.display = (stats && stats.maxMana>0) ? 'flex' : 'none';
 }
 function openInventoryScreen(){
   gameActive=false;
@@ -2673,12 +2787,11 @@ function drawMinimap(){
   });
   minimapCtx.save();
   minimapCtx.translate(W/2,H/2);
-  minimapCtx.rotate(yaw);
   minimapCtx.fillStyle=MAP_COLORS.player;
   minimapCtx.strokeStyle=MAP_COLORS.playerEdge;
-  minimapCtx.lineWidth=1.4;
+  minimapCtx.lineWidth=1.6;
   minimapCtx.beginPath();
-  minimapCtx.moveTo(0,-7); minimapCtx.lineTo(5,6); minimapCtx.lineTo(-5,6); minimapCtx.closePath();
+  minimapCtx.arc(0,0,4.5,0,Math.PI*2);
   minimapCtx.fill(); minimapCtx.stroke();
   minimapCtx.restore();
 }
@@ -2768,6 +2881,9 @@ window.addEventListener('keydown', e=>{
   if(e.code==='KeyM' && gameStarted && !gameOver){
     toggleFullMap();
   }
+  if(e.code==='Digit1' && gameStarted && !gameOver){ usePotion('health'); }
+  if(e.code==='Digit2' && gameStarted && !gameOver){ usePotion('stamina'); }
+  if(e.code==='Digit3' && gameStarted && !gameOver){ usePotion('mana'); }
 });
 window.addEventListener('keyup', e=>{ keys[e.code]=false; });
 
@@ -2944,9 +3060,11 @@ function beginGame(){
   equippedArmorId=ARMOR_CATALOG[0].id;
   ownedShields=stats.ranged ? [] : [SHIELD_CATALOG[0].id];
   equippedShieldId=stats.ranged ? null : SHIELD_CATALOG[0].id;
+  potionInventory={ health:0, stamina:0, mana:0 };
   buildWeaponViewmodel();
   buildShieldViewmodel();
   updateHUD();
+  updatePotionBar();
   buildFloor(1);
 }
 function endGame(){
@@ -3345,7 +3463,8 @@ function animate(){
     updateHUD();
     const targetFov = isSprinting ? 82 : 74;
     if(Math.abs(camera.fov-targetFov)>0.05){ camera.fov += (targetFov-camera.fov)*Math.min(1, dt*6); camera.updateProjectionMatrix(); }
-    const canAct = !isBlocking && attackCooldownTimer<=0 && stamina>=stats.attackStaminaCost && (stats.maxMana<=0 || mana>=stats.manaCost);
+    const usesManaForAttack = stats.ranged && stats.maxMana>0;
+    const canAct = !isBlocking && attackCooldownTimer<=0 && (usesManaForAttack ? mana>=stats.manaCost : stamina>=stats.attackStaminaCost);
     document.getElementById('crosshair').classList.toggle('targeting', canAct && hasValidTarget());
   } else if(!gameOver && gameStarted){
     updateEnemies(0,t);
